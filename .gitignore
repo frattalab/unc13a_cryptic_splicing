@@ -1,2 +1,12 @@
-.Rproj.user*
+.Rproj.user/*
 paper_figures_files/
+.Rproj.user
+.Rproj.user*
+.Rproj.user/
+*.json
+.Rproj.user/shared/notebooks/CEC1448B-paper_figures/1/s/chunks.json
+.Rproj.user/shared/notebooks/CEC1448B-paper_figures/1/D9B81A55D889639/chunks.json
+.Rproj.user/D9B81A5/sources/s-5D889639/C4228B37-contents
+.Rproj.user/D9B81A5/sources/s-5D889639/C4228B37
+.Rproj.user/D9B81A5/sources/prop/INDEX
+.Rproj.user/D9B81A5/sources/prop/A405D055
