@@ -21,7 +21,8 @@ p_load("data.table",
        "ggpubr",
        "forcats",
        "scales",
-       "here")
+       "here",
+       "ggthemes")
 ```
 
 ```{r setup_function, echo=FALSE}
@@ -377,7 +378,7 @@ ggboxplot(new_regress, x = "call", y = "stmn_2_cryptic_psi_leaf",
 
 new_regress %>% 
     ggplot() + 
-    stat_ecdf(aes(color = call, x = log10_stmn_2_cryptic_psi_leaf_plusone))
+    stat_ecdf(aes(color = call, x = log10_stmn_2_cryptic_psi_leaf))
 ```
 
 
