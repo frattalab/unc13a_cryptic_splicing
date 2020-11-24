@@ -22,7 +22,8 @@ p_load("data.table",
        "forcats",
        "scales",
        "here",
-       "ggthemes")
+       "ggthemes",
+       "ggrepel")
 ```
 
 ```{r setup_function, echo=FALSE}
@@ -54,15 +55,82 @@ pretty_effect_plot = function(model, p_value_cutoff = 0.05, title = "Model 1"){
         geom_text(aes(x=term, y= -0.01, label=p_star)) 
 }
 ```
+# iPSC splicing
 
-# Summary statistics
+Read in the splicing results returned by MAJIQ and make a volcano plot, only highlight 
+genes of interest with a label.
+
+```{r}
+junc_colors = c("#648FFF","#fe6101")
+ipsc_splicing = fread("/Users/annaleigh/Documents/GitHub/unc13a_cryptic_splicing/data/ipsc_splicing_results.csv")
+
+
+ipsc_splicing %>% 
+  mutate(junction_name = glue::glue("{gene_name} - {paste_into_igv_junction}")) %>% 
+  mutate(`Novel Junction` = de_novo_junctions == 0) %>% 
+  mutate(log10_test_stat = -log10(1 - p_d_psi_0_10_per_lsv_junction)) %>% 
+  mutate(log10_test_stat = ifelse(is.infinite(log10_test_stat), 16, log10_test_stat)) %>% 
+  mutate(graph_alpha = ifelse(p_d_psi_0_10_per_lsv_junction > 0.9, 1, 0.2)) %>% 
+  mutate(label_junction = ifelse(log10_test_stat == 16 & deltaPSI > 0 , junction_name,"")) %>%
+  ggplot(aes(x = deltaPSI, y = log10_test_stat)) +
+  geom_point(aes(fill = `Novel Junction`,alpha = graph_alpha), pch = 21, size = 4) + 
+  geom_text_repel(aes(label = label_junction), point.padding = 0.3,
+                  min.segment.length = unit(0, 'lines')) +
+  geom_hline(yintercept = -log10(1 - .9)) + 
+  guides(alpha = FALSE, size = FALSE) + 
+  scale_fill_manual(values = junc_colors) + 
+  theme(legend.position = 'top') + 
+  ggpubr::theme_pubr() + 
+  xlab("delta PSI") + 
+  ylab("-Log 10 Test Statistic") + 
+  theme(text = element_text(size = 18))
+```
+
+# UNC13A Cryptic PSI across TDP-43 KD experiments
+
+
+```{r}
+rel_rna_cryptic_amount = fread("/Users/annaleigh/Documents/GitHub/unc13a_cryptic_splicing/data/kd_experiments_relative_rna_and_unc13a_cryptic_junction_counts.csv")
+
+rel_rna_cryptic_amount %>% 
+    ggbarplot(,
+              x = "source",
+              add = c("mean_se","jitter"),
+              y = "cryptic_psi",
+              fill = 'condition',
+              color = 'condition',
+              position = position_dodge(0.8)) + 
+    ggpubr::theme_pubr() +
+    scale_fill_manual(
+        values = c("#40B0A6","#E1BE6A")
+    ) + 
+    scale_color_manual(
+        values = c("#1C2617","#262114")
+    ) +
+    scale_x_discrete(labels=c("shsy5y_normed" = "NB cells \n C/G", 
+                              "ipsc_normed_ward" = "iPSC Neurons \n C/G",
+                              "shsy5y_normed_no_snp" = "SH-SY5Y \n C/C",
+                              "klim_normed" = "Klim iPSC MN \n C/G + C/C",
+                              "sh_dzap" = "Appocher \n NB cells \n C/G")) +
+    ylab("UNC13A Cryptic PSI") + 
+    xlab("") + 
+    guides(color = FALSE) 
+
+```
+
+# Paient summary statistics
 First let's look at only including tissues with detectable stmn2 or UNC13A CE
 ```{r}
 clean_data_table = fread(file.path(here(),"data","nygc_junction_information.csv"))
 clean_data_table = clean_data_table %>%     
     mutate(call = fct_relevel(call,
                               "C/C", "C/G", "G/G")) %>% 
-    mutate(number_g_alleles = as.numeric(call) - 1) 
+    mutate(number_g_alleles = as.numeric(call) - 1) %>% 
+    mutate(unc13a_cryptic_leaf_psi = ifelse(is.na(unc13a_cryptic_leaf_psi),0,unc13a_cryptic_leaf_psi)) %>% 
+    mutate(stmn2_psi_groups = as.numeric(cut_interval(log10(stmn_2_cryptic_psi_leaf), n = 2))) %>%
+    mutate(stmn2_psi_groups = case_when(stmn2_psi_groups == 1 ~ " Low STMN2",
+                                      stmn2_psi_groups == 2 ~ "High STMN2",
+                                      TRUE ~ "No STMN2"))
 
 print(glue::glue("Number of unique patients: {clean_data_table[,length(unique(participant_id))]}"))
 print(glue::glue("Number of unique tissue samples: {clean_data_table[,length(unique(sample))]}"))
@@ -137,7 +205,7 @@ boxplot_table %>%
   group_by(disease_group2) %>% 
   mutate(n_sample = n_distinct(participant_id)) %>% 
   mutate(n_sample_detected = sum(detected)) %>% 
-  select(disease_group2,n_sample,n_sample_detected) %>% 
+  dplyr::select(disease_group2,n_sample,n_sample_detected) %>% 
   unique() %>% 
   mutate(detection_rate = n_sample_detected / n_sample) %>% 
   mutate(disease_group2 = gsub("Control"," Control",disease_group2)) %>% 
@@ -433,23 +501,82 @@ new_regress %>%
     stat_ecdf(aes(color = call, x = log10_stmn_2_cryptic_psi_leaf))
 ```
 
-
-Now I'm going to test out using mixed models. 
+We see that detection rate by genotype varies. 
 
 ```{r}
-library(lme4)
-unc_mixed = lmer(log10_unc13a_cryptic_leaf_psi_plusone ~ log10_stmn_2_cryptic_psi_leaf_plusone * number_g_alleles + (1 | pathology), data = new_regress)
-summary(unc_mixed)
-unc_mixed2 = lmer(log10_unc13a_cryptic_leaf_psi_plusone ~ log10_stmn_2_cryptic_psi_leaf_plusone * number_g_alleles+ (1 | pathology) + (1 | tissue_clean), data = new_regress)
-summary(unc_mixed2)
+overall_fisher = clean_data_table %>%
+
+  mutate(unc13a_detected = unc13a_cryptic_leaf_psi > 0) %>% 
+  dplyr::select(participant_id,unc13a_detected,call) %>% 
+  unique() %>% 
+  group_by(call) %>% 
+  mutate(n_sample = n_distinct(participant_id)) %>% 
+  mutate(n_sample_detected = sum(unc13a_detected)) %>% 
+  dplyr::select(call,n_sample,n_sample_detected) %>% 
+  unique()
+
+
+over_p = overall_fisher %>% 
+  column_to_rownames('call') %>% 
+  fisher.test() %>% 
+  broom::tidy() %>% 
+  .$p.value
+
+overall_fisher %>% 
+  mutate(detection_rate = n_sample_detected / n_sample) %>% 
+  mutate(detection_name = glue::glue("{call} \n ( {n_sample} )")) %>% 
+  ggplot(aes(x = detection_name, y = detection_rate, fill = detection_name)) +
+  geom_col(show.legend = F) + 
+  ggpubr::theme_pubr() + 
+  scale_y_continuous(lim = c(0,0.5),labels = scales::percent) + 
+  ylab("Percent of Patients \n UNC13A Cryptic Detected") + 
+  theme(text = element_text(size = 18)) + 
+  xlab("N individuals") + 
+  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) 
 
 ```
 
-This leads us to exploring the affects of UNC13A psi separately for tissues
-with 'low' STMN2 and those with 'high' STMN2. This distinction is simply cutting
-the distribution of STMN2 psi in half and assigning each tissue to the 'low' or 
-'high' group as so
+
+Although this difference is not significant, with the Fisher's exact giving
+a p-value of `r round(over_p,2)`.
+
+
+
 ```{r}
+detection_table = clean_data_table %>% 
+  mutate(unc13a_detected = unc13a_cryptic_leaf_psi > 0) %>% 
+  group_by(call,unc13a_detected,stmn2_psi_groups) %>% 
+  add_count(name = "genotype_detected") %>% 
+  dplyr::select(call,unc13a_detected,genotype_detected,stmn2_psi_groups) %>% 
+  unique() %>% 
+  pivot_wider(names_from = "unc13a_detected",
+              values_from = "genotype_detected") %>% 
+  dplyr::rename(unc_not_detected = `FALSE`, unc_cryptic_detected = `TRUE`) %>%
+  mutate(total_tissue = (unc_not_detected + unc_cryptic_detected)) %>% 
+  mutate(detection_rate = unc_cryptic_detected / total_tissue) %>% 
+  ungroup() %>% 
+  mutate(stmn2_psi_groups = fct_relevel(stmn2_psi_groups, "No STMN2", after = 0)) %>% 
+  mutate(detection_name = glue::glue("{call} \n ( {total_tissue} )"))
 
+count <- 0
+breaks_fun <- function(x) {
+  count <<- count + 1L
+  switch(
+    count,
+    detection_table$detection_name[1:3],
+    detection_table$detection_name[4:6],
+    detection_table$detection_name[7:9],
+  )
+}
+
+detection_table %>% 
+  ggplot(aes(x = 1, y = detection_rate,fill = call)) + 
+  geom_col(show.legend = F,position = 'dodge2') + 
+  facet_wrap(~stmn2_psi_groups) +
+  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) + 
+  scale_y_continuous(lim = c(0,0.5),labels = scales::percent) + 
+  ylab("Percent of Samples \n UNC13A Cryptic Detected") + 
+  theme(text = element_text(size = 18))  
+  # xlab("N Tissues") +
+  # scale_x_continuous(labels = breaks_fun, breaks = c(0.75, 1, 1.25), limits = c(0, NA)) 
 ```
-
