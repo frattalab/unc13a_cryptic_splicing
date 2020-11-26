@@ -62,7 +62,7 @@ genes of interest with a label.
 
 ```{r}
 junc_colors = c("#648FFF","#fe6101")
-ipsc_splicing = fread("/Users/annaleigh/Documents/GitHub/unc13a_cryptic_splicing/data/ipsc_splicing_results.csv")
+ipsc_splicing = fread(file.path(here(),"data","ipsc_splicing_results.csv")
 
 
 ipsc_splicing %>% 
@@ -104,7 +104,9 @@ The 'C/G' tells which genotypes were supported by RNA-seq on rs12973192.
 The NB cell lines are het, as is the WTC11 cell line. SH-SY5Y cells are homozygote for the major allele. 
 There was variability on the Klim hMN set on allelic expression. 
 ```{r}
-rel_rna_cryptic_amount = fread("/Users/annaleigh/Documents/GitHub/unc13a_cryptic_splicing/data/kd_experiments_relative_rna_and_unc13a_cryptic_junction_counts.csv")
+
+
+rel_rna_cryptic_amount = fread(file.path(here(),"data","kd_experiments_relative_rna_and_unc13a_cryptic_junction_counts.csv"))
 rel_rna_cryptic_amount[,cryptic_psi_full := ( UNC13A_3prime + 
                                           UNC13A_5prime +  UNC13A_5prime_2 + 
                                           UNC13A_5prime_3) / (UNC13A_annotated +  UNC13A_3prime + 
@@ -590,7 +592,14 @@ Although this difference is not significant, with the Fisher's exact giving
 a p-value of `r round(over_p,2)`.
 
 
-Only looking at disease relevant tissue and in patients
+Only looking at disease relevant tissue and in patients 
+we see that the detection rate depends on both the level of TPD-43 pathology present, 
+again I acknowledge STMN2 is a proxy, but it is what is is with the dataset, and the geneotype 
+of the patients. 
+
+This difference is also not significant with a fisher's exact test, but
+the 
+
 ```{r}
 detection_table = clean_data_table %>% 
   filter(disease_tissue == T) %>% 
@@ -680,5 +689,54 @@ clean_data_table %>%
     stat_compare_means(aes(group = call), label = "p.format") + 
     stat_compare_means(aes(group = call),comparisons = genotype_comparisons,label = "p.signif")  + 
   xlab("")
+```
+
+
+
+## Variant allele expression in TDP-43 KD experiments
+
+Across our KD's, we observed a clear allelic bias in the NB cells
+
+```{r}
+kd_vafs = fread(file.path(here(),"data","all_kds_unc13.snp.out.tsv"))
+
+kd_vafs %>% 
+    left_join(rel_rna_cryptic_amount) %>% 
+    filter(!is.na(condition)) %>% 
+    mutate(VAF = alt_reads / total) %>% 
+    filter(condition != "control" ) %>% 
+    filter(source %in% c("sh_dzap","shsy5y_normed","ipsc_normed_ward")) %>% 
+    ggplot(aes(x = TARDBP,y = VAF, fill = source,size = total)) + 
+    geom_point(pch = 21)  + 
+    ylim(0,1)
+    
+kd_vafs %>% 
+    left_join(rel_rna_cryptic_amount) %>% 
+    filter(!is.na(condition)) %>% 
+    filter(condition != "control" ) %>%     
+    mutate(VAF = alt_reads / total) %>% 
+    filter(source %in% c("sh_dzap","shsy5y_normed","ipsc_normed_ward")) %>% 
+    dplyr::select(sample,ref_reads,alt_reads,TARDBP,source,VAF) %>% 
+    data.table::melt(id.vars = c("sample","TARDBP",'source','VAF')) %>% 
+    mutate(sample = fct_reorder(sample,-TARDBP)) %>% 
+    ggplot(aes(x = sample,y = value, fill = variable)) + 
+    geom_col(pch = 21, size = 4) +
+    coord_flip()
+```
+
+Also look at the coverage in the Liu nuclear facs sorted neurons
+
+```{r}
+liu_vafs = fread(file.path(here(),"data","liu_facs_neurons_unc13.snp.out.tsv"))
+liu_vafs %>% 
+    mutate(VAF = alt_reads / total) %>% 
+    data.table::melt(id.vars = c("sample",'VAF','total')) %>% 
+    mutate(allele = ifelse(variable == "ref_reads", "C","G")) %>% 
+    mutate(sample_name = sub("_TDP_.*", "", sample)) %>% 
+    mutate(sample_name = gsub("_unsorted", "", sample_name)) %>% 
+    mutate(condition = sub(".*_", "", sample)) %>% 
+    ggplot(aes(x = condition,y = value, fill = allele)) + 
+    geom_col(pch = 21, size = 4) +
+    facet_wrap(~sample_name,scales = "free_y")
 ```
 
