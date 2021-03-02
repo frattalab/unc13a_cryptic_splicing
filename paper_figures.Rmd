@@ -444,6 +444,36 @@ rel_rna_cryptic_amount %>%
 
 ```
 
+# NMD experiment on sy5y cells
+
+```{r}
+
+for_bar_plot_sy <- read_csv(file.path(here::here(),"data","results_17022021_sy5y.csv"))
+
+for_bar_plot_sy <- data.frame(for_bar_plot_sy)
+for_bar_plot_sy$condition <- as.factor(for_bar_plot_sy$condition)
+for_bar_plot_sy$condition <- factor(for_bar_plot_sy$condition,levels(for_bar_plot_sy$condition)[c(2,1)])
+    
+nmd_plot = ggbarplot(for_bar_plot_sy,
+                        x = 'gene',
+                        add = c("mean_se","jitter"),
+                        y = 'value',
+                        fill = 'condition',
+                        color = 'condition',
+                        position = position_dodge(0.8),
+                        dot.size = 10) + 
+  scale_y_continuous(labels = scales::percent) + 
+  ggpubr::theme_pubr() +
+  scale_fill_manual(
+    values = c("#40B0A6","#E1BE6A")
+  ) + 
+  scale_color_manual(
+    values = c("#1C2617","#262114")
+  )
+
+plot(nmd_plot)
+```
+
 # iPSC protein abundance mass spec
 
 ```{r}
