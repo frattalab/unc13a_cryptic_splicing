@@ -1,6 +1,6 @@
 ---
 title: "Figures for Paper"
-author: "Anna-Leigh Brown"
+author: "Anna-Leigh Brown + Matteo Zanovello"
 date: "06/10/2020"
 output: 
     html_document:
