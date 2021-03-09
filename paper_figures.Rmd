@@ -474,6 +474,34 @@ nmd_plot = ggbarplot(for_bar_plot_sy,
 plot(nmd_plot)
 ```
 
+```{r}
+
+for_bar_plot_dz <- read_csv(file.path(here::here(),"data","results_17022021_dz.csv"))
+
+for_bar_plot_dz <- data.frame(for_bar_plot_dz)
+for_bar_plot_dz$condition <- as.factor(for_bar_plot_dz$condition)
+for_bar_plot_dz$condition <- factor(for_bar_plot_dz$condition,levels(for_bar_plot_dz$condition)[c(2,1)])
+    
+nmd_plot2 = ggbarplot(for_bar_plot_dz,
+                        x = 'gene',
+                        add = c("mean_se","jitter"),
+                        y = 'value',
+                        fill = 'condition',
+                        color = 'condition',
+                        position = position_dodge(0.8),
+                        dot.size = 10) + 
+  scale_y_continuous(labels = scales::percent) + 
+  ggpubr::theme_pubr() +
+  scale_fill_manual(
+    values = c("#40B0A6","#E1BE6A")
+  ) + 
+  scale_color_manual(
+    values = c("#1C2617","#262114")
+  )
+
+plot(nmd_plot2)
+```
+
 # iPSC protein abundance mass spec
 
 ```{r}
