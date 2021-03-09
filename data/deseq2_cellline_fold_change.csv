@@ -1,0 +1,52 @@
+padj,log2FoldChange,gene_name,source,padj_plot,log2FoldChange_plot
+1.33108875890045e-175,-2.34,TARDBP,"SK-N-DZ 
+ C/G",***,"Log2FC 
+ -2.34"
+1.85042040471248e-06,-0.43,UNC13B,"SK-N-DZ 
+ C/G",***,"Log2FC 
+ -0.43"
+5.98547971062234e-13,-0.62,UNC13A,"SK-N-DZ 
+ C/G",***,"Log2FC 
+ -0.62"
+1.04512779946449e-163,-1.48,TARDBP,"iPSC Neurons 
+ C/G",***,"Log2FC 
+ -1.48"
+1.23121597151509e-34,-0.77,UNC13B,"iPSC Neurons 
+ C/G",***,"Log2FC 
+ -0.77"
+1.14176968883438e-05,-0.25,UNC13A,"iPSC Neurons 
+ C/G",***,"Log2FC 
+ -0.25"
+4.70278199274223e-10,-1.08,TARDBP,"SH-SY5Y 
+ C/C",***,"Log2FC 
+ -1.08"
+0.630633241221386,-0.2,UNC13B,"SH-SY5Y 
+ C/C","Adj. p-value 
+0.63","Log2FC 
+ -0.2"
+0.895667560335844,-0.1,UNC13A,"SH-SY5Y 
+ C/C","Adj. p-value 
+0.9","Log2FC 
+ -0.1"
+9.75592595437263e-78,-1.35,TARDBP,"Klim iPSC MN 
+ C/G + C/C",***,"Log2FC 
+ -1.35"
+1.08901416284203e-08,-0.42,UNC13B,"Klim iPSC MN 
+ C/G + C/C",***,"Log2FC 
+ -0.42"
+0.203709855399764,-0.2,UNC13A,"Klim iPSC MN 
+ C/G + C/C","Adj. p-value 
+0.2","Log2FC 
+ -0.2"
+1.04512779946449e-163,-1.48,TARDBP,"Appocher 
+ SK-N-DZ 
+ C/G",***,"Log2FC 
+ -1.48"
+1.23121597151509e-34,-0.77,UNC13B,"Appocher 
+ SK-N-DZ 
+ C/G",***,"Log2FC 
+ -0.77"
+1.14176968883438e-05,-0.25,UNC13A,"Appocher 
+ SK-N-DZ 
+ C/G",***,"Log2FC 
+ -0.25"
