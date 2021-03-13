@@ -415,6 +415,11 @@ unc13a_ir = rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28))
+<<<<<<< HEAD
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 ```
 
 ## barplot UNC13A normalized RNA Level
@@ -445,9 +450,15 @@ rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28)) +
+<<<<<<< HEAD
     scale_y_continuous(labels = scales::percent) +
     geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
     geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
+=======
+    scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
+    geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.2,label = padj_plot),size = 8) + 
+    geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.35,label = log2FoldChange_plot),size = 8) 
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 
 ```
 
@@ -479,9 +490,15 @@ rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28)) +
+<<<<<<< HEAD
     scale_y_continuous(labels = scales::percent) +
     geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
     geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
+=======
+    scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
+    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.2,label = padj_plot),size = 8) + 
+    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.35,label = log2FoldChange_plot),size = 8) 
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 
 ```
 
@@ -489,6 +506,37 @@ rel_rna_cryptic_amount %>%
 
 ```{r}
 text_table = fread(file.path(here::here(),"data","deseq2_cellline_fold_change.csv"))
+<<<<<<< HEAD
+=======
+
+rel_rna_cryptic_amount %>% 
+    ggbarplot(,
+              x = "source",
+              add = c("mean_se","jitter"),
+              y = "TARDBP",
+              fill = 'condition',
+              color = 'condition',
+              position = position_dodge(0.8)) + 
+    ggpubr::theme_pubr() +
+    scale_fill_manual(
+        values = c("#40B0A6","#E1BE6A")
+    ) + 
+    scale_color_manual(
+        values = c("#1C2617","#262114")
+    ) +
+    ylab("TARDBP") + 
+    xlab("") + 
+    theme(legend.position = "none") +
+    guides(color = FALSE) + 
+      theme(text = element_text(size = 20,family = 'sans'), 
+          legend.text = element_text(size = 36,family = 'sans'),
+          axis.title.y = element_text(size = 28),
+          axis.text.y = element_text(size = 28)) +
+    scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
+    geom_text(data = text_table[gene_name == "TARDBP"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
+    geom_text(data = text_table[gene_name == "TARDBP"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
+>>>>>>> Stashed changes
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 
 rel_rna_cryptic_amount %>% 
     ggbarplot(,
@@ -549,11 +597,23 @@ rel_rna_cryptic_amount %>%
     stat_cor(aes(x = cryptic_psi_full, 
                  y = normalized_unc13a_ir)) +
     theme(legend.position = 'bottom')
+<<<<<<< HEAD
 ```
 
 ## Scatterplot UNC13B-IR and UNC13A Crptic
 
 ```{r}
+=======
+<<<<<<< Updated upstream
+####scatterplot UNC13BIR and UNC13A Crptic####
+=======
+```
+
+## Scatterplot UNC13B-IR and UNC13A Cryptic
+
+```{r}
+>>>>>>> Stashed changes
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 rel_rna_cryptic_amount %>% 
     filter(condition != "control") %>% 
     ggplot() + 
@@ -605,6 +665,34 @@ nmd_plot = ggbarplot(for_bar_plot_sy,
   ylab("Percent of transcript after CHX treatment")
 
 plot(nmd_plot)
+```
+
+```{r}
+
+for_bar_plot_dz <- read_csv(file.path(here::here(),"data","results_17022021_dz.csv"))
+
+for_bar_plot_dz <- data.frame(for_bar_plot_dz)
+for_bar_plot_dz$condition <- as.factor(for_bar_plot_dz$condition)
+for_bar_plot_dz$condition <- factor(for_bar_plot_dz$condition,levels(for_bar_plot_dz$condition)[c(2,1)])
+    
+nmd_plot2 = ggbarplot(for_bar_plot_dz,
+                        x = 'gene',
+                        add = c("mean_se","jitter"),
+                        y = 'value',
+                        fill = 'condition',
+                        color = 'condition',
+                        position = position_dodge(0.8),
+                        dot.size = 10) + 
+  scale_y_continuous(labels = scales::percent) + 
+  ggpubr::theme_pubr() +
+  scale_fill_manual(
+    values = c("#40B0A6","#E1BE6A")
+  ) + 
+  scale_color_manual(
+    values = c("#1C2617","#262114")
+  )
+
+plot(nmd_plot2)
 ```
 
 # iPSC protein abundance mass spec
@@ -1234,7 +1322,13 @@ clean_data_table %>%
 
 
 # Effect of UNC13A genotype
+<<<<<<< HEAD
 ## UNC13A psi by genotype - rs12973192
+=======
+<<<<<<< Updated upstream
+=======
+## UNC13A psi by genotype - rs12973192 - RE
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 ```{r}
 rs12973192_comparisons = clean_data_table %>% 
   filter(disease_tissue == T) %>% 
@@ -1249,6 +1343,72 @@ rs12973192_comparisons = clean_data_table %>%
   unique() %>% 
   combn(.,2,simplify = F)
 
+<<<<<<< HEAD
+=======
+
+clean_data_table %>% 
+  filter(disease_tissue == T) %>% 
+  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
+  dplyr::select(sample,tissue_clean,disease_group2,rs12973192,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
+  mutate(tissue_clean = gsub("_"," ",tissue_clean)) %>% 
+  group_by(rs12973192) %>% 
+  mutate(n_sample = length(unique(sample))) %>% 
+  ungroup() %>% 
+  mutate(detection_name = glue::glue("{rs12973192} \n ( {n_sample} )")) %>% 
+  ggplot(aes(y = unc13a_cryptic_leaf_psi, x = detection_name, fill = rs12973192)) + 
+  geom_boxplot() + 
+  geom_jitter( height = 0) + 
+  ylab("UNC13A PSI") +
+  xlab("UNC13A rs12973192 Genotype") +
+  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
+  ggpubr::theme_pubr() +
+  theme(text = element_text(size = 24)) +
+  stat_compare_means() +
+  stat_compare_means(comparisons = rs12973192_comparisons,label = "p.signif") + 
+  scale_y_continuous(trans='log10',labels = scales::percent)
+```
+
+## UNC13A psi by genotype - rs12608932 - RI
+```{r}
+
+rs12608932_comparisons = clean_data_table %>% 
+  filter(disease_tissue == T) %>% 
+  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
+  dplyr::select(sample,tissue_clean,disease_group2,rs12608932,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
+  mutate(tissue_clean = gsub("_"," ",tissue_clean)) %>% 
+  group_by(rs12608932) %>% 
+  mutate(n_sample = length(unique(sample))) %>% 
+  ungroup() %>% 
+  mutate(detection_name = glue::glue("{rs12608932} \n ( {n_sample} )")) %>% 
+  pull(detection_name) %>% 
+  unique() %>% 
+  combn(.,2,simplify = F)
+
+
+clean_data_table %>% 
+  filter(disease_tissue == T) %>% 
+  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
+  dplyr::select(sample,tissue_clean,disease_group2,rs12608932,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
+  mutate(tissue_clean = gsub("_"," ",tissue_clean)) %>% 
+  group_by(rs12608932) %>% 
+  mutate(n_sample = length(unique(sample))) %>% 
+  ungroup() %>% 
+  mutate(detection_name = glue::glue("{rs12608932} \n ( {n_sample} )")) %>% 
+  ggplot(aes(y = unc13a_cryptic_leaf_psi, x = detection_name, fill = rs12608932)) + 
+  geom_boxplot() + 
+  geom_jitter( height = 0) + 
+  ylab("UNC13A PSI") +
+  xlab("UNC13A rs12608932 Genotype") +
+  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
+  ggpubr::theme_pubr() +
+  theme(text = element_text(size = 24)) +
+  stat_compare_means() +
+  stat_compare_means(comparisons = rs12608932_comparisons,label = "p.signif") + 
+  scale_y_continuous(trans='log10',labels = scales::percent)
+
+```
+>>>>>>> Stashed changes
+>>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 
 clean_data_table %>% 
   filter(disease_tissue == T) %>% 
@@ -1455,7 +1615,7 @@ clean_data_table %>%
 
 ```
 
-## Correlation UNC13A PSI and STMN2 PSI with genotype effect
+## Correlation UNC13A PSI and STMN2 PSI with genotype effect - rs12973192
 
 ```{r}
 
@@ -1480,6 +1640,42 @@ clean_data_table %>%
   stat_cor(aes( x = stmn_2_cryptic_psi_leaf,
                       y = unc13a_cryptic_leaf_psi,
                       color = rs12973192),
+           method = 'spearman',
+           cor.coef.name = 'rho',
+           show.legend = FALSE,
+           size = 14) + 
+    scale_color_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
+  theme(legend.title = element_blank()) +
+  theme(text = element_text(size = 24),legend.text = element_text(size = 32))
+
+
+```
+
+## Correlation UNC13A PSI and STMN2 PSI with genotype effect - rs12608932
+
+```{r}
+
+
+clean_data_table %>% 
+  filter(disease_tissue == T) %>% 
+  filter(grepl("Cortex",tissue_clean)) %>% 
+  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
+    mutate(rs12608932 = fct_relevel(rs12608932,
+                              "A/A", "A/C", "C/C")) %>%
+  filter(!grepl("Cord",tissue_clean)) %>% 
+  mutate(log10_stmn2 = log10(stmn_2_cryptic_psi_leaf)) %>% 
+    mutate(log10_unc13a = log10(unc13a_cryptic_leaf_psi)) %>% 
+    ggpubr::ggscatter(., 
+                      x = "log10_stmn2",
+                      y = "log10_unc13a",
+                      color = 'rs12608932',                      
+                      add = "reg.line", size = 3
+                      ) +
+    ylab("UNC13A CE PSI ") + 
+    xlab("STMN2 Cryptic PSI ") +
+  stat_cor(aes( x = stmn_2_cryptic_psi_leaf,
+                      y = unc13a_cryptic_leaf_psi,
+                      color = rs12608932),
            method = 'spearman',
            cor.coef.name = 'rho',
            show.legend = FALSE,
@@ -1695,7 +1891,11 @@ liu_stmn2 = liu_stmn2 %>%
 
 liu_stmn2 <- liu_stmn2 %>% 
    mutate(stmn2_psi = STMN2_cryptic / (STMN2_cryptic + STMN2_annotated)) %>% 
-   mutate(unc13a_psi = (UNC13A_3prime + UNC13A_5prime + UNC13A_5prime_2)/ (UNC13A_annotated + UNC13A_3prime + UNC13A_5prime + UNC13A_5prime_2)) 
+   mutate(unc13a_psi = (UNC13A_3prime + UNC13A_5prime + UNC13A_5prime_2)/ (UNC13A_annotated + UNC13A_3prime + UNC13A_5prime + UNC13A_5prime_2))
+```
+
+
+```{r}
 liu_vafs %>% 
     mutate(VAF = alt_reads / total) %>% 
     data.table::melt(id.vars = c("sample",'VAF','total')) %>% 
@@ -1728,7 +1928,39 @@ liu_stmn2 %>%
   theme(legend.position =  'top') +
   theme(legend.title=element_blank()) +
   stat_compare_means(comparisons = list(c("STMN2","UNC13A")))
+```
 
+
+```{r}
+liu_stmn2 %>% 
+  dplyr::select(stmn2_psi,sample,unc13a_psi) %>% 
+  data.table::melt() %>% 
+   mutate(sample_name = sub("_TDP_.*", "", sample)) %>% 
+    filter(!grepl("unsorted",sample_name)) %>% 
+    mutate(condition = sub(".*_", "", sample)) %>% 
+    mutate(condition = ifelse(grepl("negative",condition), "TDP-43 \nNegative", "TDP-43 \nPositive")) %>% 
+    mutate(variable = ifelse(grepl("stmn2",variable), "STMN2", "UNC13A")) %>% 
+  ggbarplot(,
+            x = "condition",
+            add = c("mean_se",'jitter'),
+            y = "value",
+            fill = 'variable',
+            color = 'variable',
+            position = position_dodge(0.8),dot.size = 6) + 
+  ggpubr::theme_pubr() +
+  scale_color_manual(values = c("#000000","#000000")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
+  theme(text = element_text(size = 24))  +
+  scale_y_continuous(labels = scales::percent) + 
+  xlab("") +
+  ylab("PSI")  +
+  theme(legend.position =  'top') +
+  theme(legend.title=element_blank()) +
+  stat_compare_means(comparisons = list(c("STMN2","UNC13A")))
+```
+
+
+```{r}
 liu_stmn2 %>% 
    mutate(stmn2_psi = STMN2_cryptic / (STMN2_cryptic + STMN2_annotated)) %>% 
    mutate(unc13a_psi = (UNC13A_3prime + UNC13A_5prime)/ (UNC13A_annotated + UNC13A_3prime + UNC13A_5prime)) %>% 
