@@ -15,14 +15,37 @@ library(ggrepel)
 
 ## Ribosome profiling quality control
 
-Perform quality control to check that reads are periodic and enriched across the llllllllllllllll
+Perform quality control to check that reads are periodic.
+
+```{r message=FALSE, warning=FALSE}
+read_length_filter <- 29  # length of reads of interest
+gencode_v29_info <- read_tsv(paste0(here(), "/data/longest_proteincoding_transcript_hs_details.txt"))
+ribo_df <- read_tsv(paste0(here(), "/data/riboseq/sh_tdpb.Aligned.toTranscriptome.out.bam.bed.gz"), 
+                    col_names = c("transcript_id", "start0", "end", "strand")) %>%
+    inner_join(gencode_v29_info, by = "transcript_id") %>%
+    dplyr::filter(end-start0 == read_length_filter) %>%
+    mutate(distance_from_start = start0-cds_start) %>%
+    group_by(distance_from_start) %>%
+    mutate(n_this_dist = n()) %>%
+    dplyr::select(distance_from_start, n_this_dist) %>%
+    unique()
+    
+```
+
+```{r, warning=FALSE}
+ggplot(ribo_df, aes(x=distance_from_start, y=n_this_dist)) +
+    geom_bar(stat="identity") +
+    xlim(-50, 50) +
+    ylab("Counts") + 
+    xlab("Distance of 5' end from annotated start codon") +
+    ggtitle(paste0("Periodicity of ", read_length_filter, "nt reads from TDP-43 KD replicate B"))
+```
 
 ## Ribosome profiling
 
 Use DESeq to detect differential ribosome footprints and create volcano plots
 
-```{r message = FALSE}
-gene_names <- read_csv(paste0(here(), "/data/gencode_v29_names.csv"))
+```{r message = FALSE, warning=FALSE}
 counts_df <- read_csv(paste0(here(), "/data/riboseq/cds_feature_counts.csv"))
 counts <- as.matrix(counts_df %>% column_to_rownames("gene_id"))
 ipsc_splicing <- read_csv(paste0(here(), "/data/ipsc_splicing_results.csv"))
@@ -40,7 +63,7 @@ res <- results(dds, name=results_name)
 
 res_df <- data.frame(res) %>%
   rownames_to_column("gene_id") %>%
-  left_join(gene_names, by = "gene_id")
+  left_join(gencode_v29_info, by = "gene_id")
 
 cryptic_df <- ipsc_splicing %>%
   dplyr::select(gene_name, cryptic_junction) %>%
@@ -56,7 +79,7 @@ res_df2 <- res_df %>%
   arrange(colour)
 ```
    
-```{r} 
+```{r, warning=FALSE} 
 p1 <- ggplot(res_df2, aes(x = log2FoldChange, y = -log10(pvalue), label = label_junction)) +
   geom_point(data = res_df2 %>% filter(!cryptic_junction),
              aes(x = log2FoldChange, y= -log10(pvalue)), color = "#648FFF") +
