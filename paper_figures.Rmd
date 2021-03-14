@@ -1322,13 +1322,9 @@ clean_data_table %>%
 
 
 # Effect of UNC13A genotype
-<<<<<<< HEAD
-## UNC13A psi by genotype - rs12973192
-=======
-<<<<<<< Updated upstream
-=======
+
 ## UNC13A psi by genotype - rs12973192 - RE
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
+
 ```{r}
 rs12973192_comparisons = clean_data_table %>% 
   filter(disease_tissue == T) %>% 
@@ -1342,10 +1338,10 @@ rs12973192_comparisons = clean_data_table %>%
   pull(detection_name) %>% 
   unique() %>% 
   combn(.,2,simplify = F)
+```
 
-<<<<<<< HEAD
-=======
 
+```{r}
 clean_data_table %>% 
   filter(disease_tissue == T) %>% 
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
@@ -1370,7 +1366,6 @@ clean_data_table %>%
 
 ## UNC13A psi by genotype - rs12608932 - RI
 ```{r}
-
 rs12608932_comparisons = clean_data_table %>% 
   filter(disease_tissue == T) %>% 
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
@@ -1383,8 +1378,10 @@ rs12608932_comparisons = clean_data_table %>%
   pull(detection_name) %>% 
   unique() %>% 
   combn(.,2,simplify = F)
+```
 
 
+```{r}
 clean_data_table %>% 
   filter(disease_tissue == T) %>% 
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
@@ -1407,70 +1404,7 @@ clean_data_table %>%
   scale_y_continuous(trans='log10',labels = scales::percent)
 
 ```
->>>>>>> Stashed changes
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 
-clean_data_table %>% 
-  filter(disease_tissue == T) %>% 
-  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
-  dplyr::select(sample,tissue_clean,disease_group2,rs12973192,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
-  mutate(tissue_clean = gsub("_"," ",tissue_clean)) %>% 
-  group_by(rs12973192) %>% 
-  mutate(n_sample = length(unique(sample))) %>% 
-  ungroup() %>% 
-  mutate(detection_name = glue::glue("{rs12973192} \n ( {n_sample} )")) %>% 
-  ggplot(aes(y = unc13a_cryptic_leaf_psi, x = detection_name, fill = rs12973192)) + 
-  geom_boxplot() + 
-  geom_jitter( height = 0) + 
-  ylab("UNC13A PSI") +
-  xlab("UNC13A rs12973192 Genotype") +
-  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
-  ggpubr::theme_pubr() +
-  theme(text = element_text(size = 24)) +
-  stat_compare_means() +
-  stat_compare_means(comparisons = rs12973192_comparisons,label = "p.signif") + 
-  scale_y_continuous(trans='log10')
-```
-
-## UNC13A psi by genotype - rs12608932
-```{r}
-
-rs12608932_comparisons = clean_data_table %>% 
-  filter(disease_tissue == T) %>% 
-  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
-  dplyr::select(sample,tissue_clean,disease_group2,rs12608932,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
-  mutate(tissue_clean = gsub("_"," ",tissue_clean)) %>% 
-  group_by(rs12608932) %>% 
-  mutate(n_sample = length(unique(sample))) %>% 
-  ungroup() %>% 
-  mutate(detection_name = glue::glue("{rs12608932} \n ( {n_sample} )")) %>% 
-  pull(detection_name) %>% 
-  unique() %>% 
-  combn(.,2,simplify = F)
-
-
-clean_data_table %>% 
-  filter(disease_tissue == T) %>% 
-  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
-  dplyr::select(sample,tissue_clean,disease_group2,rs12608932,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
-  mutate(tissue_clean = gsub("_"," ",tissue_clean)) %>% 
-  group_by(rs12608932) %>% 
-  mutate(n_sample = length(unique(sample))) %>% 
-  ungroup() %>% 
-  mutate(detection_name = glue::glue("{rs12608932} \n ( {n_sample} )")) %>% 
-  ggplot(aes(y = unc13a_cryptic_leaf_psi, x = detection_name, fill = rs12608932)) + 
-  geom_boxplot() + 
-  geom_jitter( height = 0) + 
-  ylab("UNC13A PSI") +
-  xlab("UNC13A rs12608932 Genotype") +
-  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
-  ggpubr::theme_pubr() +
-  theme(text = element_text(size = 24)) +
-  stat_compare_means() +
-  stat_compare_means(comparisons = rs12608932_comparisons,label = "p.signif") + 
-  scale_y_continuous(trans='log10')
-
-```
 
 ## UNC13A psi by genotype - rs12973192
 ```{r}
