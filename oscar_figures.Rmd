@@ -1,0 +1,73 @@
+---
+title: "oscar_figures"
+author: "Oscar Wilkins"
+date: "14/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(DESeq2)
+library(here)
+library(ggrepel)
+```
+
+## Ribosome profiling quality control
+
+Perform quality control to check that reads are periodic and enriched across the llllllllllllllll
+
+## Ribosome profiling
+
+Use DESeq to detect differential ribosome footprints and create volcano plots
+
+```{r message = FALSE}
+gene_names <- read_csv(paste0(here(), "/data/gencode_v29_names.csv"))
+counts_df <- read_csv(paste0(here(), "/data/riboseq/cds_feature_counts.csv"))
+counts <- as.matrix(counts_df %>% column_to_rownames("gene_id"))
+ipsc_splicing <- read_csv(paste0(here(), "/data/ipsc_splicing_results.csv"))
+ipsc_de = read_csv(paste0(here(), "/data/ipsc_differential_expression.csv"))
+
+col_data <- data.frame(sample = colnames(counts)) %>%
+  mutate(condition = ifelse(str_detect(sample, "tdp"), "tdp_ko", "control"))
+
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = col_data,
+                              design= ~condition)
+dds <- DESeq(dds)
+results_name <- resultsNames(dds)[2]
+res <- results(dds, name=results_name)
+
+res_df <- data.frame(res) %>%
+  rownames_to_column("gene_id") %>%
+  left_join(gene_names, by = "gene_id")
+
+cryptic_df <- ipsc_splicing %>%
+  dplyr::select(gene_name, cryptic_junction) %>%
+  unique() %>%
+  filter(cryptic_junction)
+
+res_df2 <- res_df %>%
+  mutate(cryptic_junction = gene_name %in% cryptic_df$gene_name) %>%
+  mutate(label_junction = case_when(gene_name %in% c("UNC13A","AGRN",
+                                                     "UNC13B","PFKP","SETD5",
+                                                     "ATG4B","STMN2","TARDBP") ~ gene_name)) %>%
+  mutate(colour = ifelse(cryptic_junction, "#fe6101",  "#648FFF")) %>%
+  arrange(colour)
+```
+   
+```{r} 
+p1 <- ggplot(res_df2, aes(x = log2FoldChange, y = -log10(pvalue), label = label_junction)) +
+  geom_point(data = res_df2 %>% filter(!cryptic_junction),
+             aes(x = log2FoldChange, y= -log10(pvalue)), color = "#648FFF") +
+  geom_point(data = res_df2 %>% filter(cryptic_junction),
+             aes(x = log2FoldChange, y= -log10(pvalue)), color = "#fe6101") +
+  ggpubr::theme_pubr() +
+  ylab("-Log10(p-value)") +
+  xlab("Log2 fold change") +
+  geom_text_repel(box.padding = 1.2, max.overlaps = Inf)
+
+p2 <- p1 + ylim(0,10)
+p1
+p2
+```
