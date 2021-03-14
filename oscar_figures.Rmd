@@ -15,6 +15,8 @@ library(ggrepel)
 
 ## Ribosome profiling quality control
 
+TODO: convert all libraries to p_load.
+
 Perform quality control to check that reads are periodic.
 
 ```{r message=FALSE, warning=FALSE}
@@ -141,9 +143,12 @@ ggplot(tg_rnaseq_df %>%
 ## iCLIP of minigenes
 
 Read in the processed data (following alignment with Bowtie2, and filtering for high-confidence alignments), and generate
-a plot of the overall distribution of crosslinks, and the rolling average difference between the 2x Risk and 2x Healthy
+a plot of the overall distribution of crosslinks, and the rolling average difference between the 2x Risk and 2x Healthy.
+
+Next, filter for peaks in the iCLIP signal, and see how they change in 2x Risk versus 2x Healthy. Highlight those which are close to the SNPs.
 
 TODO: add script which does this filtering
+TODO: add fasta files for the minigenes
 
 ```{r message=FALSE, warning=FALSE}
 library(patchwork)
@@ -160,10 +165,14 @@ cpoor_start <- 490
 cpoor_end <- 1325
 risk_colour <- "#00BFC4"
 healthy_colour <- "#F8766D"
+confidence_interval <- 0.75  # fracion, i.e. 0.75 = 75%.
+peak_threshold <- 5 # how many times above the mean to be a "peak"
+region_length <- 50
 
 filtered_df <- read_csv(paste0(here(), "/data/iCLIP/bowtie2_aligned_2_filtered_df.csv"))
 
 rolling_window <- 20
+peak_t <- peak_threshold*1000/mg_l  # by definition...
   
 df2 <- filtered_df %>%
   ungroup() %>%
@@ -178,19 +187,18 @@ df2[is.na(df2)] <- 0
 df2 <- df2 %>% 
   mutate(diff = R-H) %>%
   mutate(mean_4 = (H+R)/2) %>%
-  arrange(pos)
+  arrange(pos) 
   
 top <- ggplot(df2, aes(x=pos, y=diff)) +
   geom_area(aes(x=pos, y = mean_4), colour="grey50", fill = "grey50", alpha=0.2) +
   geom_vline(xintercept = exon_snp, linetype="dashed") +
   geom_vline(xintercept = intron_snp, linetype="dashed") +
   xlim(1,1600) +
-  #ylim(-1,5) +
   theme_minimal() +
   ylab("XLs per 1000") +
   xlab("") +
   geom_vline(xintercept = cpoor_start) +
-  geom_vline(xintercept = cpoor_end)
+  geom_vline(xintercept = cpoor_end) 
   
 bottom <- ggplot(df2, aes(x=pos, y=zoo::rollmean(diff, k = rolling_window, na.pad=T))) +
   geom_area(colour = "grey50", fill="grey50", alpha = 1) +
@@ -209,12 +217,6 @@ bottom <- ggplot(df2, aes(x=pos, y=zoo::rollmean(diff, k = rolling_window, na.pa
 
 combined <- top/bottom
 combined
-```
-
-Next, filter for peaks in the iCLIP signal, and see how they change in 2x Risk versus 2x Healthy. Highlight those which are close to the SNPs.
-
-
-```{r message=FALSE, warning=FALSE}
 
 find_ratio_bound <- function(e_x, sem_x, e_y, sem_y, quantile_value, randoms = 10000){
   # monte carlo confidence interval estimate for a ratio. Assumes the two variables
@@ -230,21 +232,12 @@ find_ratio_bound <- function(e_x, sem_x, e_y, sem_y, quantile_value, randoms = 1
   return(quantile(ratios, quantile_value))
 }
 
-## Plot big changes
-
-confidence_interval <- 0.75  # fracion, i.e. 0.75 = 75%.
-
-peak_threshold <- 5 # how many times above the mean to be a "peak"
-region_length <- 50
-
-peak_t <- peak_threshold*1000/mg_l
-
 peak_df <- filtered_df %>%
   ungroup() %>%
   group_by(pos) %>%
-  mutate(max_at_pos = max(normalised_counts)) %>%
+  mutate(max_at_pos = max(normalised_counts)) %>%  # at least 1 of the 4 samples above the threshold
   ungroup() %>%
-  filter(max_at_pos >= peak_t) %>%
+  filter(max_at_pos >= peak_t) %>%  # at least 1 of the 4 samples above the threshold
   group_by(condition, pos) %>%
   mutate(peak_mean = mean(normalised_counts), 
          peak_sd = sd(normalised_counts)) %>%
@@ -283,4 +276,4 @@ ggplot(peak_df, aes(x = peak_rank, y = 100*frac_increase, fill=colour)) +
 
 ```
 
-## 
+
