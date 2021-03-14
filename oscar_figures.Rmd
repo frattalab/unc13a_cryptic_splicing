@@ -23,7 +23,7 @@ gencode_v29_info <- read_tsv(paste0(here(), "/data/longest_proteincoding_transcr
 ribo_df <- read_tsv(paste0(here(), "/data/riboseq/sh_tdpb.Aligned.toTranscriptome.out.bam.bed.gz"), 
                     col_names = c("transcript_id", "start0", "end", "strand")) %>%
     inner_join(gencode_v29_info, by = "transcript_id") %>%
-    dplyr::filter(end-start0 == read_length_filter) %>%
+    dplyr::filter(end-start0 == read_length_filter, strand == "+") %>%
     mutate(distance_from_start = start0-cds_start) %>%
     group_by(distance_from_start) %>%
     mutate(n_this_dist = n()) %>%
@@ -41,7 +41,7 @@ ggplot(ribo_df, aes(x=distance_from_start, y=n_this_dist)) +
     ggtitle(paste0("Periodicity of ", read_length_filter, "nt reads from TDP-43 KD replicate B"))
 ```
 
-## Ribosome profiling
+## Ribosome profiling volcano plot
 
 Use DESeq to detect differential ribosome footprints and create volcano plots
 
@@ -94,3 +94,48 @@ p2 <- p1 + ylim(0,10)
 p1
 p2
 ```
+
+## Targeted RNA-seq
+
+Read in data from processed bam files
+
+```{r message=FALSE, warning=FALSE}
+specific_rt <- read_csv(paste0(here(), "/data/targeted_RNA_seq/specific_RT_primer/for_plot.csv")) %>%
+    select(risk, sample_name, n)
+
+random_hexamer <- read_csv(paste0(here(), "/data/targeted_RNA_seq/random_hexamer/values_for_plot.csv")) %>%
+    select(-sample_name) %>%
+    select(sample_name = actual_sample_name, risk, n)
+
+tg_rnaseq_df <- bind_rows(specific_rt, random_hexamer) %>%
+  group_by(sample_name) %>%
+  mutate(n_healthy = ifelse(risk == "Non-Risk", n, 0)) %>%
+  mutate(combined_healthy = sum(n_healthy)) %>%
+  select(-n_healthy) %>%
+  mutate(combined = sum(n)) %>%
+  group_by(sample_name, risk) %>%
+  mutate(combined_n = sum(n)) %>%
+  ungroup() %>%
+  select(-n) %>%
+  unique() %>%
+  group_by(sample_name) %>%
+  mutate(p_value = pbinom(combined_healthy, sum(combined_n), 0.5)) %>%  # single-tailed bionomial test
+  mutate(colour = ifelse(risk == "Non-Risk", "lightblue", "red")) %>%
+  ungroup() %>%
+  mutate(sample_name_ordered = fct_reorder(sample_name, dplyr::desc(combined_n)))
+
+ggplot(tg_rnaseq_df %>%
+         filter(combined_n > 0), aes(x = sample_name_ordered, y = combined_n, fill = risk)) +
+  geom_bar(stat="identity", position="dodge") +
+  geom_text(aes(x=sample_name, y=-2.5, label=signif(p_value,2)), size = 3.5) +
+  xlab("") +
+  ylab("Unique cDNAs") +
+  ggeasy::easy_add_legend_title("Allele") +
+  theme_minimal() +
+  ggpubr::theme_pubr() +
+  ggeasy::easy_rotate_x_labels()
+```
+
+## iCLIP
+
+##
