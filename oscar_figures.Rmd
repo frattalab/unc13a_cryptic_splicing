@@ -124,7 +124,6 @@ tg_rnaseq_df <- bind_rows(specific_rt, random_hexamer) %>%
   unique() %>%
   group_by(sample_name) %>%
   mutate(p_value = pbinom(combined_healthy, sum(combined_n), 0.5)) %>%  # single-tailed bionomial test
-  mutate(colour = ifelse(risk == "Non-Risk", "lightblue", "red")) %>%
   ungroup() %>%
   mutate(sample_name_ordered = fct_reorder(sample_name, dplyr::desc(combined_n)))
 
