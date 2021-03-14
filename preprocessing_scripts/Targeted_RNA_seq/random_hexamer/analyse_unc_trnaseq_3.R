@@ -68,10 +68,8 @@ find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100){
 
         this_n <- df_remaining$n[which.max(df_remaining$n)]
 
-
         # find its distance from others
         if(nrow(df_added) > 0){
-
 
             df_added <- df_added %>%
                 mutate(distances = stringdist::stringdist(strings, largest))
@@ -79,12 +77,6 @@ find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100){
 
             # find how many there are of these
             already_added_sum <- sum(df_added$n[which(df_added$distances==min_distance)]) # PERHAPS THIS SHOULD BE ALL OF THEM? AND MAYBE SHOULD BE MAX
-
-            # this_df <- df %>%
-            #   mutate(distances == stringdist(strings, largest)) %>%
-            #   filter(!distances == 0) %>% # remove self
-            #   filter(distances == min(distances))
-            # already_added_sum <- sum(this_df$n) # in this case not "already added", instead all of them
 
         } else {
             min_distance <- 8 # set to large so defo included
@@ -117,8 +109,6 @@ find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100){
         return(df_added)
     }
 }
-
-
 
 ##### RUN
 
@@ -231,9 +221,8 @@ just_C_or_G_tmp[is.na(just_C_or_G_tmp)] <- 0
 just_C_or_G <- just_C_or_G_tmp %>%
     group_by(sample_name) %>%
     mutate(total = sum(n)) %>%
-    mutate(n_healthy = ifelse(nt=="C", n, 0)) %>%
+    mutate(n_healthy = ifelse(nt=="C", n, 0)) %>% # C is healthy in forward genomic strand
     mutate(p_value = pbinom(max(n_healthy), total, 0.5))
 
 # Write final data out
-
 write_csv(just_C_or_G, "values_for_plot.csv")
