@@ -203,7 +203,7 @@ rel_rna_cryptic_amount %>%
           axis.text.y = element_text(size = 28))
 ```
 
-## barplot UNC13B NMD PSI
+## barplot UNC13B frameshift PSI
 
 ```{r}
 rel_rna_cryptic_amount %>% 
@@ -1140,6 +1140,7 @@ the_plot = only_tissue %>%
 }
 
 dis_tis = clean_data_table[disease_tissue == T,unique(tissue_clean)]
+dis_tis = c("Cerebellum",dis_tis)
 my_plots = purrr::map(dis_tis,plot_by_tissue, clean_data_table)
 ggarrange(plotlist=my_plots)
 
