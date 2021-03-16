@@ -36,7 +36,8 @@ ribo_df <- read_tsv(paste0(here(), "/data/riboseq/sh_tdpb.Aligned.toTranscriptom
 
 ```{r, warning=FALSE}
 ggplot(ribo_df, aes(x=distance_from_start, y=n_this_dist)) +
-    geom_bar(stat="identity") +
+    geom_line() +
+    geom_point() +
     xlim(-50, 50) +
     ylab("Counts") + 
     xlab("Distance of 5' end from annotated start codon") +
@@ -275,4 +276,119 @@ ggplot(peak_df, aes(x = peak_rank, y = 100*frac_increase, fill=colour)) +
 
 ```
 
+
+## Heptameric analysis
+
+Analyse E-values (higher E value = stronger binding enrichment) for the motifs present at the exon SNP.
+
+```{r message=FALSE, warning=FALSE}
+
+# Read in supplementary 4 from Ray et al 2013
+
+data <- read_tsv(paste0(here(), "/data/heptamers/41586_2013_BFnature12311_MOESM334_ESM.txt"))
+
+for(type in c("exon", "intron")){
+    
+    if(type == "exon"){
+        snp <-     "TAAAAGCATGGAT"
+        healthy <- "TAAAAGGATGGAT"
+    } else {
+        snp <-     "GGATGGGTGGATA"
+        healthy <- "GGATGGTTGGATA"
+    }
+    
+    all_healthy <- c()
+    all_risk <- c()
+    
+    # Make dataframe containing E scores for each relevant 7mer
+    
+    for(i in 1:(str_length(snp)-6)){
+        this_snp <- str_sub(snp, i, i+6)
+        this_healthy <- str_sub(healthy, i, i+6)
+        
+        all_healthy <- c(all_healthy, str_replace_all(this_healthy, "T", "U"))
+        all_risk <- c(all_risk, str_replace_all(this_snp, "T", "U"))
+    
+        row1 <- data %>% filter(`7mer` == str_replace_all(this_snp, "T", "U")) %>%
+            mutate(snp = T, pos = i)
+    
+        row2 <- data %>% filter(`7mer` == str_replace_all(this_healthy, "T", "U")) %>%
+            mutate(snp = F, pos = i)
+    
+        if(i == 1){
+            full <- bind_rows(row1, row2)
+        } else {
+            full <- bind_rows(full, row1, row2)
+        }
+    }
+    
+    # Find average change in E score for the two groups of heptamers
+    
+    full2 <- full %>%
+        group_by(pos) %>%
+        filter(n() == 2) %>%
+        ungroup() %>%
+        pivot_longer(cols = contains("set")) %>%
+        select(-`7mer`) %>%
+        pivot_wider(names_from = "snp", values_from = "value") %>%
+        mutate(abs_change = `TRUE`-`FALSE`) %>%
+        filter(!is.na(`TRUE`) & !is.na(`FALSE`)) %>%
+        group_by(name) %>%
+        mutate(mean_abs_change = mean(abs_change)) %>%
+        select(name, mean_abs_change) %>%
+        unique() %>%
+        arrange(mean_abs_change) %>%
+        mutate(is_tdp43 = ifelse(str_detect(name, "RNCMPT00076"), "red", "grey80")) %>%
+        mutate(short_name = str_sub(name, 1, 11)) %>%
+        ungroup() %>% group_by(short_name) %>%
+        mutate(average_delta = mean(mean_abs_change)) %>%
+        select(short_name, is_tdp43, average_delta) %>%
+        unique()
+    
+    # Plot ranks
+    
+    plot <- ggplot(full2, aes(x=rank(average_delta), y = average_delta,
+                      fill = is_tdp43)) +
+        geom_bar(stat="identity") +
+        scale_fill_identity() +
+        theme_minimal() +
+        ggtitle(paste0("Average change in binding E value for each dataset with SNP for ", type, " SNP")) +
+        xlab("") +
+        ylab("Average change in E score") +
+        ggpubr::theme_pubr() +
+        xlab("Rank")
+    
+    print(plot)
+    
+    ggsave(paste0("C:/Users/ogw/Google Drive/UCL PhD/Year 2/unc13a/figures for paper/heptamter ranking ",
+                  type, ".svg"), plot = plot)
+    
+    full_just_tdp <- full %>%
+        group_by(pos) %>%
+        filter(n() == 2) %>%
+        ungroup() %>%
+        select(`7mer`, contains("RNCMPT00076"), snp, pos) %>%
+        mutate(mean_E = (RNCMPT00076_e_setA + RNCMPT00076_e_setB)/2) %>%
+        pivot_longer(cols = contains("RNCMP")) %>%
+        mutate(ypos = ifelse(snp, -0.35, -0.27))
+    
+    plot2 <- ggplot(full_just_tdp, aes(x = pos, y = value, colour = snp,
+                              label = `7mer`)) +
+        geom_point(size = 3) +
+        xlab("7mer") +
+        ylab("E value (similar to rank?)") +
+        ggeasy::easy_add_legend_title("Contains Risk SNP") +
+        ggtitle(paste0("Binding E value for TDP43 for all 7x 7mers with or without risk SNP for ", type, " SNP")) +
+        geom_label(aes(y = ypos), size = 2.7) +
+        xlim(0.5, 7.5) +
+        theme_bw() + 
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())  +
+        ggeasy::easy_remove_x_axis()
+    
+    print(plot2)
+    
+}
+
+
+```
 
