@@ -271,8 +271,50 @@ ggplot(peak_df, aes(x = peak_rank, y = 100*frac_increase, fill=colour)) +
   geom_errorbar(aes(ymin = 100*lower_bound, ymax = 100*upper_bound, x = peak_rank), 
                 width = 0.3)
 
+
 ```
 
+Supplementary iCLIP Figures
+
+```{r message=FALSE, warning=FALSE}
+
+bars <- filtered_df %>%
+  ungroup() %>%
+  group_by(condition, pos) %>%
+  mutate(mean_normalised = mean(normalised_counts),
+         sd_normalised = sd(normalised_counts)) %>%
+  mutate(colour = ifelse(condition == "H", healthy_colour, risk_colour))
+
+bar_top <- ggplot(bars %>% filter(abs(pos-exon_snp) < 35), aes(x = pos, y = mean_normalised,
+                                                       fill = colour)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_identity() +
+  geom_errorbar(aes(ymin = mean_normalised-sd_normalised, ymax=mean_normalised+sd_normalised),
+                position="dodge") +
+  geom_vline(xintercept = exon_snp, linetype="dashed") +
+  ylab("XLs per 1000") +
+  ggpubr::theme_pubr() +
+  ggtitle("iCLIP signal around CE SNP") +
+  xlab("")
+
+
+bar_bottom <- ggplot(bars %>% filter(abs(pos-intron_snp) < 35), aes(x = pos, y = mean_normalised,
+                                                       fill = colour)) +
+  geom_bar(stat="identity", position="dodge") +
+  scale_fill_identity() +
+  geom_errorbar(aes(ymin = mean_normalised-sd_normalised, ymax=mean_normalised+sd_normalised),
+                position="dodge") +
+  geom_vline(xintercept = intron_snp, linetype="dashed") +
+  ggpubr::theme_pubr() +
+  ylab("XLs per 1000") +
+  ggtitle("iCLIP signal around intronic SNP") +
+  xlab("")
+
+
+bar_combined <- bar_top / bar_bottom
+bar_combined
+
+```
 
 ## Heptameric analysis
 
