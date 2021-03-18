@@ -448,58 +448,66 @@ rel_rna_cryptic_amount %>%
 
 ```{r}
 
-for_bar_plot_sy <- read_csv(file.path(here::here(),"data","results_17022021_sy5y.csv"))
+fbp_sy <- read_csv(file.path(here::here(),"data","results_17022021_sy5y.csv"))
+fbp_sy$condition <- as.factor(fbp_sy$condition)
+fbp_sy$condition <- factor(fbp_sy$condition,levels(fbp_sy$condition)[c(2,1)])
 
-for_bar_plot_sy <- data.frame(for_bar_plot_sy)
-for_bar_plot_sy$condition <- as.factor(for_bar_plot_sy$condition)
-for_bar_plot_sy$condition <- factor(for_bar_plot_sy$condition,levels(for_bar_plot_sy$condition)[c(2,1)])
-    
-nmd_plot = ggbarplot(for_bar_plot_sy,
-                        x = 'gene',
-                        add = c("mean_se","jitter"),
-                        y = 'value',
-                        fill = 'condition',
-                        color = 'condition',
-                        position = position_dodge(0.8),
-                        dot.size = 10) + 
-  scale_y_continuous(labels = scales::percent) + 
-  ggpubr::theme_pubr() +
-  scale_fill_manual(
-    values = c("#40B0A6","#E1BE6A")
-  ) + 
-  scale_color_manual(
-    values = c("#1C2617","#262114")
-  )
+stattest_sy <- fbp_sy %>%
+    group_by(gene) %>%
+    t_test(value ~ 1, mu = 1) %>%
+    add_significance() %>%
+    add_xy_position(x="gene")
+stattest_sy
 
-plot(nmd_plot)
+nmd_plot_sy <- ggbarplot(fbp_sy,
+                     x = 'gene',
+                     y = 'value',
+                     add = c("mean_se","jitter"),
+                     fill = 'condition',
+                     color = 'condition',
+                     position = position_dodge(0.8),
+                     dot.size = 10) +
+    scale_y_continuous(labels = scales::percent) + 
+    ggpubr::theme_pubr() + 
+    scale_fill_manual(values = c("#40B0A6","#E1BE6A")) + 
+    scale_color_manual(values = c("#1C2617","#262114")) +
+    ylab("Percent of transcript after CHX treatment") +
+    xlab("") +
+    stat_pvalue_manual(stattest_sy, label="p.signif", y.position = 9)
+nmd_plot_sy
+
 ```
 
 ```{r}
 
-for_bar_plot_dz <- read_csv(file.path(here::here(),"data","results_17022021_dz.csv"))
+fbp_dz <- read_csv(file.path(here::here(),"data","results_17022021_dz.csv"))
+fbp_dz$condition <- as.factor(fbp_dz$condition)
+fbp_dz$condition <- factor(fbp_dz$condition,levels(fbp_dz$condition)[c(2,1)])
 
-for_bar_plot_dz <- data.frame(for_bar_plot_dz)
-for_bar_plot_dz$condition <- as.factor(for_bar_plot_dz$condition)
-for_bar_plot_dz$condition <- factor(for_bar_plot_dz$condition,levels(for_bar_plot_dz$condition)[c(2,1)])
-    
-nmd_plot2 = ggbarplot(for_bar_plot_dz,
+stattest_dz <- fbp_dz %>%
+    group_by(gene) %>%
+    t_test(value ~ 1, mu = 1) %>%
+    add_significance() %>%
+    add_xy_position(x="gene")
+stattest_dz
+
+nmd_plot_dz <- ggbarplot(fbp_dz,
                         x = 'gene',
-                        add = c("mean_se","jitter"),
                         y = 'value',
+                        add = c("mean_se","jitter"),
                         fill = 'condition',
                         color = 'condition',
                         position = position_dodge(0.8),
-                        dot.size = 10) + 
-  scale_y_continuous(labels = scales::percent) + 
-  ggpubr::theme_pubr() +
-  scale_fill_manual(
-    values = c("#40B0A6","#E1BE6A")
-  ) + 
-  scale_color_manual(
-    values = c("#1C2617","#262114")
-  )
+                        dot.size = 10) +
+    scale_y_continuous(labels = scales::percent) + 
+    ggpubr::theme_pubr() + 
+    scale_fill_manual(values = c("#40B0A6","#E1BE6A")) + 
+    scale_color_manual(values = c("#1C2617","#262114")) +
+    ylab("Percent of transcript after CHX treatment") +
+    xlab("") +
+    stat_pvalue_manual(stattest_dz, label="p.signif", y.position = 26)
+nmd_plot_dz
 
-plot(nmd_plot2)
 ```
 
 # iPSC protein abundance mass spec
