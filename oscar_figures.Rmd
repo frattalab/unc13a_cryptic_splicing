@@ -7,10 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(tidyverse)
-library(DESeq2)
-library(here)
-library(ggrepel)
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+p_load("tidyverse", "DESeq2", "here", "ggrepel", "patchwork")
 ```
 
 ## Ribosome profiling quality control
@@ -151,8 +150,6 @@ TODO: add script which does this filtering
 TODO: add fasta files for the minigenes
 
 ```{r message=FALSE, warning=FALSE}
-library(patchwork)
-
 exon_snp <- 556 
 intron_snp <- 1106
 intron_start <- 141 
@@ -392,3 +389,26 @@ for(type in c("exon", "intron")){
 
 ```
 
+## Isothermal Titration Calorimetry
+
+Read in values 
+
+```{r warning=FALSE, message=FALSE}
+df <- read_csv(paste0(here(), 
+                      "/data/itc/itc final values.csv")) %>%
+    group_by(RNA) %>%
+    mutate(sd =sd(kd)) %>%
+    mutate(mean_kd = mean(kd))
+
+ggplot(df, aes(x = RNA, y = kd)) +
+    geom_bar(aes(x = RNA, y = mean_kd), stat="identity", position="dodge") +
+    geom_point() +
+    geom_errorbar(aes(x=RNA, ymin = mean_kd-sd, ymax = mean_kd+sd),
+                  width = 0.3) +
+    ylim(0, NA) +
+    ggpubr::theme_pubr() +
+    ylab("Kd / nM") +
+    xlab("")
+
+t.test(df$kd[which(df$RNA=="H")], df$kd[which(df$RNA=="R")])
+```
