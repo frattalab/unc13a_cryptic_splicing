@@ -1243,6 +1243,8 @@ clean_data_table %>%
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
   filter(junction_reads_stmn2 >= 30) %>% 
   filter(junction_reads_unc13a >= 30) %>%
+  # filter(UNC13A_3prime_leaf + UNC13A_5prime_1_leaf >= 2) %>% 
+  # filter(STMN2_cryptic_leaf >= 2) %>% 
   filter(grepl("Cortex",tissue_clean)) %>% 
   filter(stmn_2_cryptic_psi_leaf > 0 ) %>% 
   filter(unc13a_cryptic_leaf_psi > 0) %>% 
@@ -1270,6 +1272,9 @@ clean_data_table %>%
                  "Temporal Cortex",
                  "Cerebellum") )%>% 
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
+  filter(disease_tissue == T) %>% 
+  filter(UNC13A_3prime_leaf + UNC13A_5prime_1_leaf >= 1) %>% 
+  filter(STMN2_cryptic_leaf >= 1) %>% 
   dplyr::select(sample,disease_group2,tissue_clean,stmn_2_cryptic_psi_leaf,unc13a_cryptic_leaf_psi) %>% 
   melt() %>% 
     mutate(tissue_clean = fct_relevel(tissue_clean,"Motor Cortex", "Cervical Spinal Cord",
@@ -1404,18 +1409,21 @@ comp_for_gg = rs12973192_comparisons %>% pull(detection_name) %>%
   unique() %>% 
   combn(.,2,simplify = F)
 
-rs12973192_comparisons %>% 
+ce_psi = rs12973192_comparisons %>% 
   ggplot(aes(y = unc13a_cryptic_leaf_psi, x = detection_name, fill = rs12973192)) + 
   geom_boxplot() + 
   geom_jitter( height = 0) + 
   ylab("UNC13A PSI") +
-  xlab("UNC13A rs12973192 Genotype") +
+  xlab(element_blank()) +
   scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
   ggpubr::theme_pubr() +
   theme(text = element_text(size = 24)) +
   stat_compare_means() +
+  theme(legend.position = "none") +
   stat_compare_means(comparisons = comp_for_gg,label = "p.signif") + 
-  scale_y_continuous(trans='log10',labels = scales::percent)
+  scale_y_continuous(trans='log10',labels = scales::percent_format(accuracy = 1L))  +
+  ggtitle("CE SNP (rs12973192)")
+
 ```
 
 ## UNC13A psi by genotype - rs12608932 - RI
@@ -1435,18 +1443,24 @@ comp_for_gg = rs12608932_comparisons %>% pull(detection_name) %>%
   unique() %>% 
   combn(.,2,simplify = F)
 
-rs12608932_comparisons %>% 
+in_psi = rs12608932_comparisons %>% 
   ggplot(aes(y = unc13a_cryptic_leaf_psi, x = detection_name, fill = rs12608932)) + 
   geom_boxplot() + 
   geom_jitter( height = 0) + 
-  ylab("UNC13A PSI") +
-  xlab("UNC13A rs12973192 Genotype") +
+  ylab(element_blank()) +
+  xlab(element_blank()) +
   scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
   ggpubr::theme_pubr() +
+  theme(legend.position = "none") +
   theme(text = element_text(size = 24)) +
   stat_compare_means() +
   stat_compare_means(comparisons = comp_for_gg,label = "p.signif") + 
-  scale_y_continuous(trans='log10',labels = scales::percent)
+    scale_y_continuous(trans='log10',labels = scales::percent_format(accuracy = 1L))  +
+  ggtitle("intronic SNP (rs12973192)")
+```
+
+```{r}
+ggpubr::ggarrange(ce_psi,in_psi)
 ```
 
 
@@ -1598,7 +1612,7 @@ clean_data_table %>%
 ```{r}
 
 
-clean_data_table %>% 
+ce_snp = clean_data_table %>% 
   filter(disease_tissue == T) %>% 
   filter(junction_reads_stmn2 >= 30) %>% 
   filter(junction_reads_unc13a >= 30) %>%
@@ -1628,7 +1642,8 @@ clean_data_table %>%
   theme(legend.title = element_blank()) +
   theme(text = element_text(size = 24),legend.text = element_text(size = 32)) +
     ylab(expression(paste("Lo", g[10], "UNC13A CE PSI"))) +
-      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) 
+      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) +
+  ggtitle("CE SNP (rs12973192) genotype")
 
 
 
@@ -1640,7 +1655,7 @@ clean_data_table %>%
 ```{r}
 
 
-clean_data_table %>% 
+in_snp = clean_data_table %>% 
   filter(disease_tissue == T) %>% 
     filter(junction_reads_stmn2 >= 30) %>% 
   filter(junction_reads_unc13a >= 30) %>%
@@ -1670,10 +1685,15 @@ clean_data_table %>%
   theme(legend.title = element_blank()) +
   theme(text = element_text(size = 24),legend.text = element_text(size = 32)) +
       ylab(expression(paste("Lo", g[10], "UNC13A CE PSI"))) +
-      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) 
+      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) +
+   ggtitle("intronic SNP (rs12608932) genotype")
 
 
 
+```
+
+```{r}
+ggpubr::ggarrange(ce_snp,in_snp)
 ```
 
 
