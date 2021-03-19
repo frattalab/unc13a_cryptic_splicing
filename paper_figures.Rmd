@@ -415,11 +415,7 @@ unc13a_ir = rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28))
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
-=======
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
+
 ```
 
 ## barplot UNC13A normalized RNA Level
@@ -450,15 +446,10 @@ rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28)) +
-<<<<<<< HEAD
     scale_y_continuous(labels = scales::percent) +
     geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
     geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
-=======
-    scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
-    geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.2,label = padj_plot),size = 8) + 
-    geom_text(data = text_table[gene_name == "UNC13A"],aes(x = source, y= 1.35,label = log2FoldChange_plot),size = 8) 
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
+
 
 ```
 
@@ -490,15 +481,10 @@ rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28)) +
-<<<<<<< HEAD
     scale_y_continuous(labels = scales::percent) +
     geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
     geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
-=======
-    scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
-    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.2,label = padj_plot),size = 8) + 
-    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.35,label = log2FoldChange_plot),size = 8) 
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
+
 
 ```
 
@@ -506,8 +492,7 @@ rel_rna_cryptic_amount %>%
 
 ```{r}
 text_table = fread(file.path(here::here(),"data","deseq2_cellline_fold_change.csv"))
-<<<<<<< HEAD
-=======
+
 
 rel_rna_cryptic_amount %>% 
     ggbarplot(,
@@ -535,35 +520,7 @@ rel_rna_cryptic_amount %>%
     scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
     geom_text(data = text_table[gene_name == "TARDBP"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
     geom_text(data = text_table[gene_name == "TARDBP"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
->>>>>>> Stashed changes
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
 
-rel_rna_cryptic_amount %>% 
-    ggbarplot(,
-              x = "source",
-              add = c("mean_se","jitter"),
-              y = "TARDBP",
-              fill = 'condition',
-              color = 'condition',
-              position = position_dodge(0.8)) + 
-    ggpubr::theme_pubr() +
-    scale_fill_manual(
-        values = c("#40B0A6","#E1BE6A")
-    ) + 
-    scale_color_manual(
-        values = c("#1C2617","#262114")
-    ) +
-    ylab("TARDBP") + 
-    xlab("") + 
-    theme(legend.position = "none") +
-    guides(color = FALSE) + 
-      theme(text = element_text(size = 20,family = 'sans'), 
-          legend.text = element_text(size = 36,family = 'sans'),
-          axis.title.y = element_text(size = 28),
-          axis.text.y = element_text(size = 28)) +
-    scale_y_continuous(labels = scales::percent) +
-    geom_text(data = text_table[gene_name == "TARDBP"],aes(x = source, y= 1.35,label = padj_plot),size = 8) + 
-    geom_text(data = text_table[gene_name == "TARDBP"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8) 
 
 ```
 ## Scatterplot stmn2 normalized TARDBP
@@ -597,23 +554,15 @@ rel_rna_cryptic_amount %>%
     stat_cor(aes(x = cryptic_psi_full, 
                  y = normalized_unc13a_ir)) +
     theme(legend.position = 'bottom')
-<<<<<<< HEAD
 ```
 
-## Scatterplot UNC13B-IR and UNC13A Crptic
 
-```{r}
-=======
-<<<<<<< Updated upstream
-####scatterplot UNC13BIR and UNC13A Crptic####
-=======
-```
+
 
 ## Scatterplot UNC13B-IR and UNC13A Cryptic
 
 ```{r}
->>>>>>> Stashed changes
->>>>>>> 726646a264376675e20bc66e2b4658c1aa88cd71
+
 rel_rna_cryptic_amount %>% 
     filter(condition != "control") %>% 
     ggplot() + 
