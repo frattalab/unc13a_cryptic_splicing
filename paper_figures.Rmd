@@ -888,7 +888,7 @@ boxplot_table %>%
     ggplot(aes(x = detection_name, 
                y = inclusion_reads * 10^6,
                fill ="red")) + 
-    geom_boxplot(show.legend = F,position = position_dodge(preserve = "single",width = 1),outlier.colour = NA)) + 
+    geom_boxplot(show.legend = F,position = position_dodge(preserve = "single",width = 1),outlier.colour = NA) + 
     geom_point(size = 2,show.legend = F,pch = 21, position = position_jitterdodge(dodge.width=1,jitter.width = 0.3))+ 
     ggplot2::facet_wrap(vars(tissue_clean),scales = "free_x",nrow = 3) + 
     ylab("UNC13A cryptic \n reads per million") +
@@ -1650,6 +1650,7 @@ ggpubr::ggarrange(ce_snp,in_snp)
 
 ```{r}
 detected_table_for_graph = clean_data_table %>% 
+  filter(!(rs12973192 == "C/G" & rs12608932 == "C/C")) %>% 
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>% 
   filter(unc13a_cryptic_leaf_psi > 0 ) %>% 
   filter(stmn_2_cryptic_psi_leaf > 0 ) %>%
@@ -1665,9 +1666,9 @@ detected_table_for_graph = clean_data_table %>%
   mutate(n_sample = length(unique(sample))) %>% 
   ungroup() %>% 
   mutate(detection_name = glue::glue("{rs12973192} \n ( {n_sample} )")) %>% 
-  mutate(no_cong = ifelse(rs12608932 == "C/C" & rs12973192 == "C/G",8,3))
+  mutate(no_cong = ifelse(rs12608932 == "C/C" & rs12973192 == "C/G",8,3)) %>% as.data.table()
 
-
+#get out that person who is discongruous
 
 comparisons = combn(unique(detected_table_for_graph$detection_name),2,simplify = F) 
 
