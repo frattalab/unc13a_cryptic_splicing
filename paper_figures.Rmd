@@ -2,11 +2,12 @@
 title: "Figures for Paper"
 author: "Anna-Leigh Brown + Matteo Zanovello + Oscar Wilkins"
 date: "06/10/2020"
-output: 
+output:
     html_document:
         code_folding: hide
         toc: true
         toc_float: true
+knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), 'docs/index.html')) })
 ---
 
 
@@ -42,9 +43,10 @@ p_load("data.table",
        "here",
        "ggthemes",
        "ggrepel",
-       "DESeq2", 
-       "patchwork", 
-       "rstatix")
+       "DESeq2",
+       "patchwork",
+       "rstatix",
+       "ggeasy")
 ```
 
 
@@ -1995,7 +1997,7 @@ Perform quality control to check that reads are periodic.
 ```{r message=FALSE, warning=FALSE}
 read_length_filter <- 29  # length of reads of interest
 gencode_v29_info <- read_tsv(paste0(here(), "/data/longest_proteincoding_transcript_hs_details.txt"))
-ribo_df <- read_tsv(paste0(here(), "/data/riboseq/sh_tdpb.Aligned.toTranscriptome.out.bam.bed.gz"), 
+ribo_df <- read_tsv(paste0(here(), "/data/riboseq/sh_tdpb.Aligned.toTranscriptome.out.bam.bed.gz"),
                     col_names = c("transcript_id", "start0", "end", "strand")) %>%
     inner_join(gencode_v29_info, by = "transcript_id") %>%
     dplyr::filter(end-start0 == read_length_filter, strand == "+") %>%
@@ -2004,7 +2006,7 @@ ribo_df <- read_tsv(paste0(here(), "/data/riboseq/sh_tdpb.Aligned.toTranscriptom
     mutate(n_this_dist = n()) %>%
     dplyr::select(distance_from_start, n_this_dist) %>%
     unique()
-    
+
 ```
 
 ```{r, warning=FALSE}
@@ -2012,7 +2014,7 @@ ggplot(ribo_df, aes(x=distance_from_start, y=n_this_dist)) +
     geom_line() +
     geom_point() +
     xlim(-50, 50) +
-    ylab("Counts") + 
+    ylab("Counts") +
     xlab("Distance of 5' end from annotated start codon") +
     ggtitle(paste0("Periodicity of ", read_length_filter, "nt reads from TDP-43 KD replicate B"))
 ```
@@ -2054,8 +2056,8 @@ res_df2 <- res_df %>%
   mutate(colour = ifelse(cryptic_junction, "#fe6101",  "#648FFF")) %>%
   arrange(colour)
 ```
-   
-```{r, warning=FALSE} 
+
+```{r, warning=FALSE}
 p1 <- ggplot(res_df2, aes(x = log2FoldChange, y = -log10(pvalue), label = label_junction)) +
   geom_point(data = res_df2 %>% filter(!cryptic_junction),
              aes(x = log2FoldChange, y= -log10(pvalue)), color = "#648FFF") +
@@ -2124,14 +2126,14 @@ TODO: add script which does this filtering
 TODO: add fasta files for the minigenes
 
 ```{r message=FALSE, warning=FALSE}
-exon_snp <- 556 
+exon_snp <- 556
 intron_snp <- 1106
-intron_start <- 141 
+intron_start <- 141
 intron_end <- 1429
 acceptor1 <- 394
 acceptor2 <- 444
 donor <- 572
-mg_l <- 1624 
+mg_l <- 1624
 cpoor_start <- 490
 cpoor_end <- 1325
 risk_colour <- "#00BFC4"
@@ -2144,22 +2146,22 @@ filtered_df <- read_csv(paste0(here(), "/data/iCLIP/bowtie2_aligned_2_filtered_d
 
 rolling_window <- 20
 peak_t <- peak_threshold*1000/mg_l  # by definition...
-  
+
 df2 <- filtered_df %>%
   ungroup() %>%
   group_by(condition, pos) %>%
   mutate(mean_counts = sum(normalised_counts)/2) %>%
   select(pos, condition, mean_counts) %>%
   unique() %>%
-  pivot_wider(names_from = "condition", values_from ="mean_counts") 
+  pivot_wider(names_from = "condition", values_from ="mean_counts")
 
 df2[is.na(df2)] <- 0
-  
-df2 <- df2 %>% 
+
+df2 <- df2 %>%
   mutate(diff = R-H) %>%
   mutate(mean_4 = (H+R)/2) %>%
-  arrange(pos) 
-  
+  arrange(pos)
+
 top <- ggplot(df2, aes(x=pos, y=diff)) +
   geom_area(aes(x=pos, y = mean_4), colour="grey50", fill = "grey50", alpha=0.2) +
   geom_vline(xintercept = exon_snp, linetype="dashed") +
@@ -2169,8 +2171,8 @@ top <- ggplot(df2, aes(x=pos, y=diff)) +
   ylab("XLs per 1000") +
   xlab("") +
   geom_vline(xintercept = cpoor_start) +
-  geom_vline(xintercept = cpoor_end) 
-  
+  geom_vline(xintercept = cpoor_end)
+
 bottom <- ggplot(df2, aes(x=pos, y=zoo::rollmean(diff, k = rolling_window, na.pad=T))) +
   geom_area(colour = "grey50", fill="grey50", alpha = 1) +
   geom_vline(xintercept =  exon_snp, linetype="dashed") +
@@ -2184,7 +2186,7 @@ bottom <- ggplot(df2, aes(x=pos, y=zoo::rollmean(diff, k = rolling_window, na.pa
   geom_vline(xintercept =  intron_end) +
   geom_vline(xintercept =  acceptor1) +
   geom_vline(xintercept =  acceptor2) +
-  geom_vline(xintercept =  donor) 
+  geom_vline(xintercept =  donor)
 
 combined <- top/bottom
 combined
@@ -2192,14 +2194,14 @@ combined
 find_ratio_bound <- function(e_x, sem_x, e_y, sem_y, quantile_value, randoms = 10000){
   # monte carlo confidence interval estimate for a ratio. Assumes the two variables
   # x and y are normally distributed. Finds confidence interval for (x-y)/y
-  
+
   # randomly generate possible global means for x and y
-  
+
   xs = rnorm(randoms, mean = e_x, sd=sem_x)  # risk
   ys = rnorm(randoms, mean = e_y, sd=sem_y)  # healthy
-  
+
   ratios = (xs-ys)/ys
-  
+
   return(quantile(ratios, quantile_value))
 }
 
@@ -2210,7 +2212,7 @@ peak_df <- filtered_df %>%
   ungroup() %>%
   filter(max_at_pos >= peak_t) %>%  # at least 1 of the 4 samples above the threshold
   group_by(condition, pos) %>%
-  mutate(peak_mean = mean(normalised_counts), 
+  mutate(peak_mean = mean(normalised_counts),
          peak_sd = sd(normalised_counts)) %>%
   ungroup() %>%
   select(condition, pos, peak_mean, peak_sd) %>%
@@ -2218,17 +2220,17 @@ peak_df <- filtered_df %>%
   pivot_wider(names_from = "condition", values_from = c("peak_mean", "peak_sd")) %>%
   mutate(frac_increase = (peak_mean_R-peak_mean_H)/peak_mean_H) %>%
   mutate(peak_rank = rank(frac_increase)) %>%
-  mutate(colour = ifelse(abs(pos-exon_snp)<region_length, "gold", 
+  mutate(colour = ifelse(abs(pos-exon_snp)<region_length, "gold",
                          ifelse(abs(pos-intron_snp)<region_length, "purple", "grey50")))
 
-peak_df$upper_bound <- mapply(find_ratio_bound, 
+peak_df$upper_bound <- mapply(find_ratio_bound,
                         peak_df$peak_mean_R,
                         peak_df$peak_sd_R/sqrt(2), #convert to SEM
                         peak_df$peak_mean_H,
                         peak_df$peak_sd_H/sqrt(2), #convert to SEM
                         0.5*(1+confidence_interval))
 
-peak_df$lower_bound <- mapply(find_ratio_bound, 
+peak_df$lower_bound <- mapply(find_ratio_bound,
                         peak_df$peak_mean_R,
                         peak_df$peak_sd_R/sqrt(2), #convert to SEM
                         peak_df$peak_mean_H,
@@ -2242,7 +2244,7 @@ ggplot(peak_df, aes(x = peak_rank, y = 100*frac_increase, fill=colour)) +
   ggpubr::theme_pubr()+
   ylab("% change in 2x Risk") +
   xlab("Rank") +
-  geom_errorbar(aes(ymin = 100*lower_bound, ymax = 100*upper_bound, x = peak_rank), 
+  geom_errorbar(aes(ymin = 100*lower_bound, ymax = 100*upper_bound, x = peak_rank),
                 width = 0.3)
 
 
@@ -2301,7 +2303,7 @@ Analyse E-values (higher E value = stronger binding enrichment) for the motifs p
 data <- read_tsv(paste0(here(), "/data/heptamers/41586_2013_BFnature12311_MOESM334_ESM.txt"))
 
 for(type in c("exon", "intron")){
-    
+
     if(type == "exon"){
         snp <-     "TAAAAGCATGGAT"
         healthy <- "TAAAAGGATGGAT"
@@ -2309,34 +2311,34 @@ for(type in c("exon", "intron")){
         snp <-     "GGATGGGTGGATA"
         healthy <- "GGATGGTTGGATA"
     }
-    
+
     all_healthy <- c()
     all_risk <- c()
-    
+
     # Make dataframe containing E scores for each relevant 7mer
-    
+
     for(i in 1:(str_length(snp)-6)){
         this_snp <- str_sub(snp, i, i+6)
         this_healthy <- str_sub(healthy, i, i+6)
-        
+
         all_healthy <- c(all_healthy, str_replace_all(this_healthy, "T", "U"))
         all_risk <- c(all_risk, str_replace_all(this_snp, "T", "U"))
-    
+
         row1 <- data %>% filter(`7mer` == str_replace_all(this_snp, "T", "U")) %>%
             mutate(snp = T, pos = i)
-    
+
         row2 <- data %>% filter(`7mer` == str_replace_all(this_healthy, "T", "U")) %>%
             mutate(snp = F, pos = i)
-    
+
         if(i == 1){
             full <- bind_rows(row1, row2)
         } else {
             full <- bind_rows(full, row1, row2)
         }
     }
-    
+
     # Find average change in E score for the two groups of heptamers
-    
+
     full2 <- full %>%
         group_by(pos) %>%
         filter(n() == 2) %>%
@@ -2357,9 +2359,9 @@ for(type in c("exon", "intron")){
         mutate(average_delta = mean(mean_abs_change)) %>%
         select(short_name, is_tdp43, average_delta) %>%
         unique()
-    
+
     # Plot ranks
-    
+
     plot <- ggplot(full2, aes(x=rank(average_delta), y = average_delta,
                       fill = is_tdp43)) +
         geom_bar(stat="identity") +
@@ -2370,9 +2372,9 @@ for(type in c("exon", "intron")){
         ylab("Average change in E score") +
         ggpubr::theme_pubr() +
         xlab("Rank")
-    
+
     print(plot)
-    
+
     full_just_tdp <- full %>%
         group_by(pos) %>%
         filter(n() == 2) %>%
@@ -2381,7 +2383,7 @@ for(type in c("exon", "intron")){
         mutate(mean_E = (RNCMPT00076_e_setA + RNCMPT00076_e_setB)/2) %>%
         pivot_longer(cols = contains("RNCMP")) %>%
         mutate(ypos = ifelse(snp, -0.35, -0.27))
-    
+
     plot2 <- ggplot(full_just_tdp, aes(x = pos, y = value, colour = snp,
                               label = `7mer`)) +
         geom_point(size = 3) +
@@ -2391,12 +2393,12 @@ for(type in c("exon", "intron")){
         ggtitle(paste0("Binding E value for TDP43 for all 7x 7mers with or without risk SNP for ", type, " SNP")) +
         geom_label(aes(y = ypos), size = 2.7) +
         xlim(0.5, 7.5) +
-        theme_bw() + 
+        theme_bw() +
         theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())  +
         ggeasy::easy_remove_x_axis()
-    
+
     print(plot2)
-    
+
 }
 
 
@@ -2404,10 +2406,10 @@ for(type in c("exon", "intron")){
 
 # Isothermal Titration Calorimetry
 
-Read in values 
+Read in values
 
 ```{r warning=FALSE, message=FALSE}
-df <- read_csv(paste0(here(), 
+df <- read_csv(paste0(here(),
                       "/data/itc/itc final values.csv")) %>%
     group_by(RNA) %>%
     mutate(sd =sd(kd)) %>%
