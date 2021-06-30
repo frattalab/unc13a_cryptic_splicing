@@ -161,14 +161,6 @@ print(fig1a)
 print(fig1b)
 ```
 
-<!-- # iPSC WTC11 parent line genotype -->
-
-<!-- ```{r confirm_no_als_ftd_wtc11 mutations} -->
-<!-- library(vcf) -->
-<!-- wtc11_vcf = "/Users/annaleigh/Downloads/3546dc62_AH77TTBBXX_DS-229105_GCCAAT_recalibrated.vcf.gz" -->
-<!-- vcf <- read.vcfR( wtc11_vcf, verbose = FALSE ) -->
-<!-- ``` -->
-
 
 
 # UNC13A CE PSI across TDP-43 KD experiments
@@ -819,17 +811,17 @@ clean_data_table %>%
 
 
 clean_data_table %>%
-   filter(disease_group2 %in% c("FTLD-TDP", "ALS-TDP")) %>%
   filter(disease_tissue == T) %>% 
   mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-") ) %>% 
-  ggplot(aes(x = unc13a_detected,y = log10(library_size) )) + 
+  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
+  mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+  ggplot(aes(x = disease_group2,y = log10(library_size), fill = unc13a_detected)) + 
   geom_point(colour = "firebrick", size = 0.5, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
-  geom_boxplot(fill = NA, colour = "black", outlier.colour = NA) +
+  geom_boxplot(colour = "black", outlier.colour = NA) +
   labs(title = "Library size and UNC13A CE detection ",subtitle = "Wilcox test") + 
-  facet_wrap(~ tissue + disease_group2) + 
+  facet_wrap(~ tissue, scales = 'free_x') + 
   ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center", method = "wilcox" ) +
-  labs(y = "log10 library size", x = "UNC13A CE detected") +
+  labs(y = "log10 library size", fill= "UNC13A CE detected", x = element_blank()) +
   theme(axis.text.x = element_text(size = 15)) + 
   ggpubr::theme_pubr()
 ```
@@ -840,20 +832,19 @@ clean_data_table %>%
 # library size 
 
 clean_data_table %>%
-   filter(disease_group2 %in% c("FTLD-TDP", "ALS-TDP")) %>%
-  filter(disease_tissue == T) %>% 
+    filter(disease_tissue == T) %>% 
   mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-") ) %>% 
-  ggplot(aes(x = unc13a_detected,y = UNC13A_TPM )) + 
-  geom_point( colour = "firebrick", size = 0.5, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
-  geom_boxplot(fill = NA, colour = "black", outlier.colour = NA) +
+  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
+  mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+  ggplot(aes(x = disease_group2,y = UNC13A_TPM, fill = unc13a_detected)) + 
+  geom_point(colour = "firebrick", size = 0.5, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
+  geom_boxplot(colour = "black", outlier.colour = NA) +
   labs(title = "UNC13A TPM and UNC13A CE detection ",subtitle = "Wilcox test") + 
-  facet_wrap(~ tissue + disease_group2, scales = 'free_y') + 
+  facet_wrap(~ tissue, scales = 'free') + 
   ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center", method = "wilcox" ) +
-  labs(y = "UNC13A expression (TPM)", x = "UNC13A CE detection") +
-  theme(axis.text.x = element_text(size = 15)) +
+  labs(y = "UNC13A TPM", fill= "UNC13A CE detected", x = element_blank()) +
+  theme(axis.text.x = element_text(size = 15)) + 
   ggpubr::theme_pubr()
-
 
 ```
 
@@ -879,9 +870,9 @@ clean_data_table %>%
 
 ```
 
+## Effect of UNC13A discovery and UNC13B TPM
 
-
-```{r unc13a tpm and ce detection}
+```{r unc13a ce and UNC13B_TPM}
 ## effect of RIN?
 clean_data_table %>%
   filter(disease_tissue == T) %>% 
@@ -913,11 +904,18 @@ cell_types = fread("/Users/annaleigh/Documents/GitHub/unc13a_cryptic_splicing/da
 
 
 cell_types %>% 
-  left_join(clean_data_table %>%
-   filter(disease_group2 %in% c("FTLD-TDP", "ALS-TDP")) %>%
+  left_join(clean_data_table, by = 'sample') %>%
+  filter(disease_group2 %in% c("FTLD-TDP", "ALS-TDP")) %>%
   filter(disease_tissue == T) %>% 
   mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-") ))
+  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
+  filter(!is.na(inclusion_reads)) %>% 
+  select(sample,cell,deconv, tissue_clean,unc13a_detected) %>% 
+  unique() %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = unc13a_detected, y = deconv, fill = cell)) + 
+  facet_wrap(~ tissue_clean,scales = 'free') 
+
 
 ```
 
