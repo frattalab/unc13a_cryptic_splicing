@@ -2,17 +2,28 @@ library(tidyverse)
 library(Rsamtools)
 
 find_coverage_density <- function(vec, q_start, q_end, 
-                                  buffer = 3, l = 100000){
-    # The purpose of this function is to detect 
+                                  buffer = 3){
+    # The purpose of this function is to calculate the fraction of the region
+    # to which the record is aligned. Eg if this is a 100 nt region and 80 nt
+    # of the reference are aligned then it would return 0.8 .
     
+    # Buffer is a small amount that is trimmed from the 5' and 3' end to reduce
+    # noise at the ends of regions.
+    
+    # Update start and ends with the buffer
     q_start <- q_start + buffer
     q_end <- q_end - buffer
+    
+    # if, after applying the buffer, the size is now very small, set the size 
+    # to 1
     if(q_end < q_start){
         q_start <- round((q_start+q_end)/2)
         q_end <- q_start
     }
     
+    # Find the number of aligned bases in this region
     counts_this_region = sum(vec[q_start:q_end])
+    # Divide by the length of the region
     density <- counts_this_region/(q_end-q_start+1)
     
     return(density)
@@ -69,7 +80,7 @@ make_coverage_vector <- function(cigar, start, vector_l=1000000,
 ir_start <- 61106 
 ir_end <- 62405
 
-# the cryptic exon (just the short one)  CHECK THIS
+# the cryptic exon (just the short one)  TODO check this
 cryptic_start <- 47804
 cryptic_end <- cryptic_start+127
 
@@ -155,6 +166,9 @@ for(sample in samples){
                                        cryptic_end) # last 20 nucleotides of IR
     }
     
+    # Classify each read based on whether it contains the cryptic or IR
+    # Due to the relatively high error rate of nanopore this is performed 
+    # in a permissive way (in both directions)
     full_reads <- bam_df %>%
         filter(upstream_d > 0.7 | end_cryptic_d > 0.9) %>% # some -ve strand reads may terminate within cryptic
         filter(downstream_d > 0.5 | start_ir_d > 0.3) %>% # some +ve strand reads might terminate in intron - should still include these
@@ -163,13 +177,13 @@ for(sample in samples){
                                               ifelse(end_cryptic_d < 0.1 & start_ir_d > 0.3, "IR",
                                                      ifelse(end_cryptic_d > 0.8 & start_ir_d > 0.3, "both", NA)))))
     
+    # write processed reads to csv
     write_csv(full_reads, paste0("processed_again/barcode", sample, ".csv"))
     
 }
 
 
 # read in processed files
-
 csvs <- Sys.glob("processed_again/*.csv")
 
 for(csv in csvs){
