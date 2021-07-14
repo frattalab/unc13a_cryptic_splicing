@@ -804,7 +804,71 @@ clean_data_table %>%
   xlab("N individuals")
 ```
 
-## Effect of seqeuncer (read length) size on CE discovery 
+## Systematic differences in  (read length) between cases and controls
+
+```{r sequences and case/controls}
+# library size 
+#llumina HiSeq 2500 (125 bp paired end) or an Illumina NovaSeq (100 bp paired end). 
+case_control_sequencing <- clean_data_table %>%
+  filter(tissue_clean %in% c("Frontal_Cortex", 
+                             "Lumbar_Spinal_Cord", 
+                             "Cervical_Spinal_Cord", 
+                             "Motor_Cortex", 
+                             "Temporal_Cortex",
+                             "Cerebellum")) %>% 
+  filter(sequencing_platform != "") 
+
+quick_chiq = function(tbl){
+  
+    if(length(unique(tbl$sequencing_platform)) < 2){
+      return(NA)
+    }
+    comparison_table = table(disease = tbl$disease_group2, 
+                             sequencing_platform = tbl$sequencing_platform)
+    print(comparison_table)
+
+    p_value = chisq.test(comparison_table) %>%  broom::tidy() %>% pull(p.value)
+    browser()
+    print(p_value)
+    
+    return(p_value)
+}
+
+
+
+case_control_sequencing %>% 
+  group_by(tissue_clean) %>% 
+  nest()  %>% 
+  mutate(chiq_pvalue = map_dbl(data, quick_chiq)) 
+
+
+
+unc13a_data_fisher$data = NULL
+
+unc13a_sequencing_platform_pct = unc13a_sequencing_platform %>%
+  group_by(disease_group2,tissue_clean, sequencing_platform, unc13a_detected) %>% tally() %>%
+  spread(key = unc13a_detected, value = n,fill = 0) %>%
+  mutate(detection = `+` / ( `-` + `+`) ) %>% 
+  mutate(total =  ( `-` + `+`) ) %>% 
+  mutate(plot_name = glue::glue("{sequencing_platform} \n  ({total})")) %>% 
+  left_join(unc13a_data_fisher)
+
+
+
+unc13a_sequencing_platform_pct %>%
+  ggplot(aes(x = plot_name, y = detection )) + 
+  geom_col(fill = "firebrick") +
+  labs(title = "UNC13A CE detection and sequencing platform", 
+       y = "UNC13A CE detected",x = element_blank(), subtitle = "Fisher exact test") + 
+  facet_wrap(~disease_group2 + tissue_clean,scales = 'free_x') +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  geom_text(aes(x = 1.5, y = 1.05, label = paste0("p = ", signif(fisher_pvalue,digits = 2) ) )) +
+  theme(legend.text = element_text(size = 15)) +
+  ggpubr::theme_pubr()
+ # scale_y_continuous(expand = c(0,0) ) 
+```
+
+## Effect of sequencing machine (read length) on CE discovery 
 
 ```{r unc detection by sequencer  }
 # library size 
@@ -822,29 +886,28 @@ unc13a_sequencing_platform <- clean_data_table %>%
   filter(disease_group2 %in% c("ALS-TDP","FTLD-TDP"))
 
 quick_fisher = function(tbl){
-
-  if(nrow(tbl) <2){
-    return(NA)
-  }else{
+  
+    if(length(unique(tbl$sequencing_platform)) < 2){
+      return(NA)
+    }
     comparison_table = table(unc13a = tbl$unc13a_detected, 
                              sequencing_platform = tbl$sequencing_platform)
     p_value = fisher.test(comparison_table)$p.value
     
     return(p_value)
-  }
 }
+
+
 
 unc13a_data_fisher = unc13a_sequencing_platform %>% 
   filter(tissue_clean != "Thoracic_Spinal_Cord") %>% 
-  split(.,list(unique(unc13a_sequencing_platform$tissue_clean), unique(unc13a_sequencing_platform$disease_group2))) %>% 
-  purrr::map_df( quick_fisher, .id = "tissue_clean" ) %>% 
-  melt() %>% 
-  select(variable,value) %>% 
-  separate(variable,sep = "\\.", into = c("tissue_clean","disease_group2"))
+  group_by(disease_group2,tissue_clean) %>% 
+  nest() %>% 
+  mutate(fisher_pvalue = map_dbl(data, quick_fisher)) 
 
 
 
-
+unc13a_data_fisher$data = NULL
 
 unc13a_sequencing_platform_pct = unc13a_sequencing_platform %>%
   group_by(disease_group2,tissue_clean, sequencing_platform, unc13a_detected) %>% tally() %>%
@@ -856,82 +919,126 @@ unc13a_sequencing_platform_pct = unc13a_sequencing_platform %>%
 
 
 
-
-
 unc13a_sequencing_platform_pct %>%
   ggplot(aes(x = plot_name, y = detection )) + 
   geom_col(fill = "firebrick") +
-  labs(title = "UNC13A CE detection and sequencing platform", y = "UNC13A CE detected") + 
+  labs(title = "UNC13A CE detection and sequencing platform", 
+       y = "UNC13A CE detected",x = element_blank(), subtitle = "Fisher exact test") + 
   facet_wrap(~disease_group2 + tissue_clean,scales = 'free_x') +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  geom_text(aes(x = 1.5, y = 1.05, label = paste0("p = ", signif(value,digits = 2) ) )) +
-  theme(legend.text = element_text(size = 15))
+  geom_text(aes(x = 1.5, y = 1.05, label = paste0("p = ", signif(fisher_pvalue,digits = 2) ) )) +
+  theme(legend.text = element_text(size = 15)) +
+  ggpubr::theme_pubr()
  # scale_y_continuous(expand = c(0,0) ) 
 ```
 ## Effect of library size on CE discovery 
 
 ```{r unc detection by library size  }
 # library size 
+force_colors = c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6", "#E76BF3")
+names(force_colors) = c("Control","ALS \n non-TDP","ALS-TDP","FTLD \n non-TDP","FTLD-TDP")
 
+plot_list = list()
 
-clean_data_table %>%
-  filter(disease_tissue == T) %>% 
-  mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
-  mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
-  ggplot(aes(x = disease_group2,y = log10(library_size), fill = unc13a_detected)) + 
-  geom_point(colour = "firebrick", size = 0.5, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
-  geom_boxplot(colour = "black", outlier.colour = NA) +
-  labs(title = "Library size and UNC13A CE detection ",subtitle = "Wilcox test") + 
-  facet_wrap(~ tissue, scales = 'free_x') + 
-  ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center", method = "wilcox" ) +
-  labs(y = "log10 library size", fill= "UNC13A CE detected", x = element_blank()) +
-  theme(axis.text.x = element_text(size = 15)) + 
-  ggpubr::theme_pubr()
+lib_comps = c("Cervical_Spinal_Cord", "Frontal_Cortex", 
+              "Lumbar_Spinal_Cord", "Temporal_Cortex",
+              "Motor_Cortex", "Cerebellum")
+
+plot_list = list()
+for(t in 1:length(lib_comps)){
+  plt = clean_data_table %>%
+     filter(tissue_clean == lib_comps[t]) %>% 
+    mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
+    mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
+    mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+    ggplot(aes(x = disease_group2,y = log10(library_size),fill = disease_group2)) + 
+    geom_boxplot(colour = "black", outlier.colour = NA) +
+    geom_point(pch = 21, size = 2, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
+    facet_wrap(~ tissue_clean,scales = 'free_x') + 
+    # ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center", method = "wilcox" ) +
+    ggpubr::stat_compare_means(label = "p.signif",
+                               label.x.npc = "center",
+                               method = "wilcox",
+                               comparisons = list(
+                                                  c("Control","ALS-TDP"),
+                                                  c("ALS \n non-TDP","ALS-TDP"))) +
+      ggpubr::stat_compare_means(label = "p.signif", 
+                               label.x.npc = "center", 
+                               method = "wilcox",
+                               comparisons = list(
+                                                  c("Control","FTLD-TDP"),
+                                                  c("FTLD-TDP","FTLD \n non-TDP"))) + 
+    labs(y = "log10 library size", fill= "UNC13A CE detected", x = element_blank()) +
+    theme(axis.text.x = element_text(size = 15)) + 
+    ggpubr::theme_pubr() + 
+    scale_fill_manual(values = force_colors) +
+            theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank(),
+              legend.position = "none") 
+  
+  plot_list[[t]] <- plt
+}
+
+cowplot::plot_grid(plotlist = plot_list)
 ```
 
-## Effect of UNC13A TPM onCE discovery 
 
-```{r unc detection by UNC13A tpm }
-# library size 
-
-clean_data_table %>%
-  filter(disease_tissue == T) %>% 
-  mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
-  mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
-  ggplot(aes(x = disease_group2,y = UNC13A_TPM, fill = unc13a_detected)) + 
-  geom_point(colour = "firebrick", size = 0.5, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
-  geom_boxplot(colour = "black", outlier.colour = NA) +
-  labs(title = "UNC13A TPM and UNC13A CE detection ",subtitle = "Wilcox test") + 
-  facet_wrap(~ tissue, scales = 'free') + 
-  ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center", method = "wilcox" ) +
-  labs(y = "UNC13A TPM", fill= "UNC13A CE detected", x = element_blank()) +
-  theme(axis.text.x = element_text(size = 15)) + 
-  ggpubr::theme_pubr()
-
-```
 
 ## Effect of RIN and UNC13A discovery
 
 ```{r rin discovery}
-## effect of RIN?
-clean_data_table %>%
-  filter(disease_tissue == T) %>% 
-  mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-  filter(!is.na(rin)) %>%
-  mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-") ) %>% 
-    mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
-  ggplot(aes(x = disease_group2,y = rin, fill = unc13a_detected)) + 
-  geom_point( colour = "firebrick", size = 0.5, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
-   geom_boxplot(colour = "black", outlier.colour = NA) +
-  labs(title = "Sample RIN and UNC13A CE detection ") + 
-  facet_wrap(~ tissue, scales = 'free_x') + 
-  ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center") +
-  labs(y = "RIN", x = element_blank(), fill = "UNC13A CE detection") +
-  theme(axis.text.x = element_text(size = 15)) +
-  ggpubr::theme_pubr()
+force_colors = c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6", "#E76BF3")
+names(force_colors) = c("Control","ALS \n non-TDP","ALS-TDP","FTLD \n non-TDP","FTLD-TDP")
 
+plot_list = list()
+
+lib_comps = c("Cervical_Spinal_Cord", "Frontal_Cortex", 
+              "Lumbar_Spinal_Cord", "Temporal_Cortex",
+              "Motor_Cortex", "Cerebellum")
+
+plot_list = list()
+for(t in 1:length(lib_comps)){
+    if(grepl("Cord",lib_comps[t]) | lib_comps[t] == "Motor_Cortex"){
+        groups = c("Control","ALS-TDP","ALS \n non-TDP")
+    }else if(lib_comps[t] %in% c("Frontal_Cortex","Temporal_Cortex")){
+        groups = c("Control","FTLD-TDP","FTLD \n non-TDP")
+    }else{
+        groups = c("ALS-TDP", "Control", "ALS \n non-TDP", "FTLD-TDP", "FTLD \n non-TDP")
+    }
+    
+    plt = clean_data_table %>%
+        filter(tissue_clean == lib_comps[t]) %>% 
+        mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+        filter(disease_group2 %in% groups) %>% 
+        
+        ggplot(aes(x = disease_group2,y = rin,fill =disease_group2 )) + 
+        geom_boxplot(colour = "black", outlier.colour = NA) +
+        geom_point(pch = 21, size = 2, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
+        facet_wrap(~ tissue_clean,scales = 'free_x') + 
+        # ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center", method = "wilcox" ) +
+        ggpubr::stat_compare_means(label = "p.signif",
+                                   label.x.npc = "center",
+                                   method = "wilcox",
+                                   comparisons = list(
+                                       c("Control","ALS-TDP"),
+                                       c("ALS \n non-TDP","ALS-TDP"))) +
+        ggpubr::stat_compare_means(label = "p.signif", 
+                                   label.x.npc = "center", 
+                                   method = "wilcox",
+                                   comparisons = list(
+                                       c("Control","FTLD-TDP"),
+                                       c("FTLD-TDP","FTLD \n non-TDP"))) + 
+        labs(y = "RIN", x = element_blank()) +
+        theme(axis.text.x = element_text(size = 15)) + 
+        ggpubr::theme_pubr() + 
+        theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank(),
+              legend.position = "none") 
+    
+    plot_list[[t]] <- plt
+}
+
+cowplot::plot_grid(plotlist = plot_list,ncol = 2)    
 ```
 
 ## Effect of UNC13A discovery and UNC13B TPM
@@ -950,13 +1057,79 @@ clean_data_table %>%
   geom_boxplot(outlier.colour = NA) +
   labs(title = "UNC13A CE detection and UNC13B TPM",subtitle = "Wilcox test") + 
   facet_wrap(~ tissue_clean,scales = 'free') + 
-  ggpubr::stat_compare_means(label = "p.signif",) +
+  ggpubr::stat_compare_means(label = "p.signif") +
   labs(y = "UNC13B TPM", x = "UNC13A CE detection") +
   theme(axis.text.x = element_text(size = 15)) +
   ggpubr::theme_pubr() +
-  ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center")
+  ggpubr::stat_compare_means(label = "p.format", label.x.npc = "center",label.y.npc = 0.9)
 ```
 
+## Celltype composition between cases and controls
+
+```{r}
+force_colors = c("#F8766D", "#A3A500", "#00BF7D", "#00B0F6", "#E76BF3")
+names(force_colors) = c("Control","ALS \n non-TDP","ALS-TDP","FTLD \n non-TDP","FTLD-TDP")
+
+plot_list = list()
+
+lib_comps = c("Cervical_Spinal_Cord", "Frontal_Cortex", 
+              "Lumbar_Spinal_Cord", "Temporal_Cortex",
+              "Motor_Cortex", "Cerebellum")
+
+
+for(t in 1:length(lib_comps)){
+    
+    
+    if(grepl("Cord",lib_comps[t]) | lib_comps[t] == "Motor_Cortex"){
+        groups = c("Control","ALS-TDP","ALS \n non-TDP")
+    }else if(lib_comps[t] %in% c("Frontal_Cortex","Temporal_Cortex")){
+        groups = c("Control","FTLD-TDP","FTLD \n non-TDP")
+    }else{
+        groups = c("ALS-TDP", "Control", "ALS \n non-TDP", "FTLD-TDP", "FTLD \n non-TDP")
+    }
+
+    plt = cell_types %>% 
+        left_join(clean_data_table[,.(sample,
+                                      UNC13A_3prime_leaf,
+                                      UNC13A_5prime_1_leaf,
+                                      disease_group2,
+                                      disease_tissue)], by = 'sample') %>%
+        filter(!is.na(disease_group2)) %>% 
+        unique() %>% 
+        filter(tissue_clean == lib_comps[t]) %>% 
+        filter(disease_group2 %in% groups) %>% 
+        mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+        ggplot(aes(x = disease_group2,y = deconv,fill =disease_group2 )) + 
+        geom_boxplot(colour = "black", outlier.colour = NA) +
+        facet_wrap(~cell,scales = 'free_x',nrow = 1) +
+        ggpubr::stat_compare_means(label = "p.signif", 
+                                   label.x.npc = "center", 
+                                   method = "wilcox",
+                                   comparisons = list(
+                                       c("Control","FTLD-TDP"),
+                                       c("FTLD-TDP","FTLD \n non-TDP"))) +
+        ggpubr::stat_compare_means(label = "p.signif",
+                                   label.x.npc = "center",
+                                   method = "wilcox",
+                                   comparisons = list(
+                                       c("Control","ALS-TDP"),
+                                       c("ALS \n non-TDP","ALS-TDP"))) +
+        ggtitle(lib_comps[t]) + 
+        labs(fill = element_blank(),x = element_blank()) + 
+        geom_point(pch = 21, size = 2, alpha = 0.9, position = position_jitter(width = 0.2, height = 0) ) + 
+        ggpubr::theme_pubr() +
+        theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank(),
+              legend.position = "none") + 
+        scale_fill_manual(values = force_colors)
+plot_list[[t]] <- plt
+
+}
+
+cowplot::plot_grid(plotlist = plot_list,ncol = 2)    
+
+
+```
 
 ## Effect of celltype composition on UNC13A CE detection 
 
@@ -1083,7 +1256,7 @@ boxplot_table %>%
 This only plots the short novel acceptor and novel donor
 
 ```{r onlyshort}
-boxplot_table %>%
+only_short_plotter = boxplot_table %>%
     filter(tissue_clean %in%
                c("Frontal Cortex",
                  "Lumbar Spinal Cord",
@@ -1100,7 +1273,13 @@ boxplot_table %>%
                                       "Frontal Cortex",
                                       "Lumbar Spinal Cord",
                                       "Temporal Cortex",
-                                      "Motor Cortex")) %>%
+                                      "Motor Cortex"))
+
+comps = only_short_plotter %>% pull(detection_name) %>%
+  unique() %>%
+  combn(.,2,simplify = F)
+
+only_short_plotter %>% 
     ggplot(aes(x = detection_name,
                y = inclusion_reads * 10^6,
                fill ="red")) +
@@ -1800,12 +1979,16 @@ clean_data_table %>%
 
 ```
 
-## Correlation UNC13A PSI and STMN2 PSI with genotype effect - rs12973192
+## Correlation UNC13A PSI and STMN2 PSI with genotype effect - concordants samples
 
 ```{r}
 
 
-ce_snp = clean_data_table %>%
+clean_data_table %>%
+  filter(!(rs12973192 == "C/G" & rs12608932 == "C/C")) %>%
+  mutate(snp_status = case_when(rs12973192 == "C/C" ~ "healthy/healthy",
+                                rs12973192 == "C/G" ~ "healthy/risk",
+                                rs12973192 == "G/G" ~ "risk/risk")) %>% 
   filter(disease_tissue == T) %>%
   filter(junction_reads_stmn2 >= 30) %>%
   filter(junction_reads_unc13a >= 30) %>%
@@ -1819,74 +2002,29 @@ ce_snp = clean_data_table %>%
     ggpubr::ggscatter(.,
                       x = "log10_stmn2",
                       y = "log10_unc13a",
-                      color = 'rs12973192',
-                      add = "reg.line", size = 3
+                      fill = 'snp_status',
+                      color = 'black', 
+                      size = 3,shape = 21,
                       ) +
     ylab("UNC13A CE PSI ") +
     xlab("STMN2 Cryptic PSI ") +
+  geom_smooth(method = 'lm',aes(color = snp_status),se = F) + 
   stat_cor(aes( x = stmn_2_cryptic_psi_leaf,
                       y = unc13a_cryptic_leaf_psi,
-                      color = rs12973192),
+                      color = snp_status),
            method = 'spearman',
            cor.coef.name = 'rho',
            show.legend = FALSE,
            size = 14) +
     scale_color_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
+      scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
+
   theme(legend.title = element_blank()) +
   theme(text = element_text(size = 24),legend.text = element_text(size = 32)) +
     ylab(expression(paste("Lo", g[10], "UNC13A CE PSI"))) +
-      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) +
-  ggtitle("CE SNP (rs12973192) genotype")
+      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) 
 
 
-
-
-```
-
-## Correlation UNC13A PSI and STMN2 PSI with genotype effect - rs12608932
-
-```{r}
-
-
-in_snp = clean_data_table %>%
-  filter(disease_tissue == T) %>%
-    filter(junction_reads_stmn2 >= 30) %>%
-  filter(junction_reads_unc13a >= 30) %>%
-  filter(grepl("Cortex",tissue_clean)) %>%
-  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>%
-    mutate(rs12608932 = fct_relevel(rs12608932,
-                              "A/A", "A/C", "C/C")) %>%
-  filter(!grepl("Cord",tissue_clean)) %>%
-  mutate(log10_stmn2 = log10(stmn_2_cryptic_psi_leaf)) %>%
-    mutate(log10_unc13a = log10(unc13a_cryptic_leaf_psi)) %>%
-    ggpubr::ggscatter(.,
-                      x = "log10_stmn2",
-                      y = "log10_unc13a",
-                      color = 'rs12608932',
-                      add = "reg.line", size = 3
-                      ) +
-    ylab("UNC13A CE PSI ") +
-    xlab("STMN2 Cryptic PSI ") +
-  stat_cor(aes( x = stmn_2_cryptic_psi_leaf,
-                      y = unc13a_cryptic_leaf_psi,
-                      color = rs12608932),
-           method = 'spearman',
-           cor.coef.name = 'rho',
-           show.legend = FALSE,
-           size = 14) +
-    scale_color_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
-  theme(legend.title = element_blank()) +
-  theme(text = element_text(size = 24),legend.text = element_text(size = 32)) +
-      ylab(expression(paste("Lo", g[10], "UNC13A CE PSI"))) +
-      xlab(expression(paste("Lo", g[10], "STMN2 CE PSI"))) +
-   ggtitle("intronic SNP (rs12608932) genotype")
-
-
-
-```
-
-```{r}
-ggpubr::ggarrange(ce_snp,in_snp)
 ```
 
 
