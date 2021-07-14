@@ -1,5 +1,7 @@
 library(tidyverse)
 library(Rsamtools)
+library(patchwork)
+
 
 find_coverage_density <- function(vec, q_start, q_end, 
                                   buffer = 3){
@@ -185,7 +187,6 @@ for(sample in samples){
 
 # read in processed files
 csvs <- Sys.glob("processed_again/*.csv")
-
 for(csv in csvs){
     if(csv == csvs[1]){
         combined <- read_csv(csv)
@@ -194,15 +195,17 @@ for(csv in csvs){
     }
 }
 
+
+# make a dataframe linking barcodes to the sample names
 sample_names <- data.frame(barcode = c("bc05", "bc06", "bc07", "bc08", "bc09", "bc10", 
                                        "bc11", "bc12"),
                            name = c("SHSY_NT1", "SHSY_Dox1", 
                                     "SHSY_NT2", "SHSY_Dox2",
-                                    "P56", "P45", "P63", "P28"))
+                                    "FTD1", "FTD2", "FTD3", "FTD4"))
 
-
+# Find the number of reads of each type for each sample
 df <- combined %>%
-    filter(!is.na(classification)) %>%
+    filter(!is.na(classification)) %>%  # remove reads that didn't classify clearly
     dplyr::select(barcode, classification) %>%
     group_by(barcode, classification) %>%
     mutate(n = n()) %>%
@@ -212,26 +215,63 @@ df <- combined %>%
     ungroup() %>%
     complete(barcode, nesting(classification), fill = list(fraction = 0)) %>%
     left_join(sample_names) %>%
-    unique()
+    unique() %>%
+    mutate(class2 = ifelse(classification == "both", "CE+IR", classification)) %>%
+    mutate(type = ifelse(str_detect(name, "SHSY"), "SHSY5Y", "Patient")) %>%
+    ungroup()
 
-p1 <- ggplot(df, aes(x = name, y = 100*fraction, fill = classification)) +
+write_csv(df, "combind_nanopore_dataframe.csv")
+
+
+p2_patient <- ggplot(df %>% filter(classification != "Neither",
+                                   type=="Patient"), aes(x = name, y = 100*fraction, fill = class2)) +
     geom_bar(stat="identity", position="dodge") +
-    ggeasy::easy_rotate_x_labels() +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
     ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
     xlab("") +
-    ggtitle("Read distribution")
-    
+    ggeasy::easy_add_legend_title("")
 
-p2 <- ggplot(df %>% filter(classification != "Neither"), aes(x = name, y = 100*fraction, fill = classification)) +
+p2_shsy <- ggplot(df %>% filter(classification != "Neither",
+                                type=="SHSY5Y"), aes(x = name, y = 100*fraction, fill = class2)) +
     geom_bar(stat="identity", position="dodge") +
-    ggeasy::easy_rotate_x_labels() +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
     ylab("Percentage of reads") +
-    ggtitle("'Neither' removed") +
-    xlab("")
+    ggtitle("SH-SY5Y") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") 
 
-library(patchwork)
+p2_shsy | p2_patient
+ggsave("neither_removed.svg", height = 15, width = 20, units="cm")
 
-p1+p2
+# without neither removed
 
-ggsave("combined_plot_nanopore.png")
+p2_patient <- ggplot(df %>% filter(classification != "",
+                                   type=="Patient"), aes(x = name, y = 100*fraction, fill = class2,
+                                                         colour = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+p2_patient
+
+p2_shsy <- ggplot(df %>% filter(classification != "",
+                                type=="SHSY5Y"), aes(x = name, y = 100*fraction, fill = class2,
+                                                     colour = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("SH-SY5Y") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") 
+p2_shsy | p2_patient
+ggsave("neither_not_removed.svg", height = 15, width = 20, units="cm")
+
+
 
