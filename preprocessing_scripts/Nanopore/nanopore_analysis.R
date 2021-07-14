@@ -220,7 +220,7 @@ df <- combined %>%
     mutate(type = ifelse(str_detect(name, "SHSY"), "SHSY5Y", "Patient")) %>%
     ungroup()
 
-write_csv(df, "combind_nanopore_dataframe.csv")
+write_csv(df, "combined_nanopore_dataframe.csv")
 
 
 p2_patient <- ggplot(df %>% filter(classification != "Neither",
@@ -244,7 +244,7 @@ p2_shsy <- ggplot(df %>% filter(classification != "Neither",
     ggeasy::easy_add_legend_title("") 
 
 p2_shsy | p2_patient
-ggsave("neither_removed.svg", height = 15, width = 20, units="cm")
+ggsave("nanopore_neither_removed.svg", height = 15, width = 20, units="cm")
 
 # without neither removed
 
@@ -271,7 +271,7 @@ p2_shsy <- ggplot(df %>% filter(classification != "",
     xlab("") +
     ggeasy::easy_add_legend_title("") 
 p2_shsy | p2_patient
-ggsave("neither_not_removed.svg", height = 15, width = 20, units="cm")
+ggsave("nanopore_neither_not_removed.svg", height = 15, width = 20, units="cm")
 
 
 

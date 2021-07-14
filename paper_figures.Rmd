@@ -2406,7 +2406,7 @@ for(type in c("exon", "intron")){
 
 # Isothermal Titration Calorimetry
 
-Read in values
+Read in values, plot and perform a t-test
 
 ```{r warning=FALSE, message=FALSE}
 df <- read_csv(paste0(here(),
@@ -2427,3 +2427,60 @@ ggplot(df, aes(x = RNA, y = kd)) +
 
 t.test(df$kd[which(df$RNA=="H")], df$kd[which(df$RNA=="R")])
 ```
+
+# Nanopore
+
+Read in pre-processed data (see separate script) and plot
+```{r warning=FALSE, message=FALSE}
+df <- read_csv(paste0(here(),
+                      "/data/nanopore/combined_nanopore_dataframe.csv")) 
+
+p2_patient <- ggplot(df %>% filter(classification != "Neither",
+                                   type=="Patient"), aes(x = name, y = 100*fraction, fill = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+p2_shsy <- ggplot(df %>% filter(classification != "Neither",
+                                type=="SHSY5Y"), aes(x = name, y = 100*fraction, fill = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("SH-SY5Y") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") 
+
+p2_shsy | p2_patient
+
+# without neither removed
+
+p2_patient <- ggplot(df %>% filter(classification != "",
+                                   type=="Patient"), aes(x = name, y = 100*fraction, fill = class2,
+                                                         colour = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+p2_shsy <- ggplot(df %>% filter(classification != "",
+                                type=="SHSY5Y"), aes(x = name, y = 100*fraction, fill = class2,
+                                                     colour = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("SH-SY5Y") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") 
+p2_shsy | p2_patient
+```
+
+
