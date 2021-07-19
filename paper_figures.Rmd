@@ -2435,6 +2435,8 @@ Read in pre-processed data (see separate script) and plot
 df <- read_csv(paste0(here(),
                       "/data/nanopore/combined_nanopore_dataframe.csv")) 
 
+df[is.na(df)] <- 0
+
 p2_patient <- ggplot(df %>% filter(classification != "Neither",
                                    type=="Patient"), aes(x = name, y = 100*fraction, fill = class2)) +
     geom_bar(stat="identity", position="dodge") +
@@ -2481,6 +2483,48 @@ p2_shsy <- ggplot(df %>% filter(classification != "",
     xlab("") +
     ggeasy::easy_add_legend_title("") 
 p2_shsy | p2_patient
+
+# fractional
+
+df2 <- df %>%
+    filter(classification != "Neither") %>%
+    group_by(name) %>%
+    mutate(f = n/sum(n))
+
+ggplot(df2, aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+ggsave("C:/Users/ogw/Google Drive/UCL PhD/Year 2/unc13a/nanopore/nanopore_100.svg",
+       height = 10, width = 12, units = "cm")
+
+ggplot(df2 %>%
+           filter(type == "Patient"), aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") |
+    ggplot(df2 %>%
+           filter(type != "Patient"), aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+ggsave("C:/Users/ogw/Google Drive/UCL PhD/Year 2/unc13a/nanopore/nanopore_100_separate.svg",
+       height = 10, width = 12, units = "cm")
+
+
+    
+
 ```
 
 
