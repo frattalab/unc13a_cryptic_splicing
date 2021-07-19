@@ -22,12 +22,12 @@ library(stringdist)
 # list of "true" UMIs. It does this by finding the minimum string distance of each UMI to 
 # the UMIs currently in the list of "true" UMIs. It requires that for a UMI sequence which 
 # has a string distance of n bases, it is at least 1/(10^n) times the abundance of 
-# the most similar UMI. It also requires that each UMI is at least 0.01x times as abundant
+# the most similar UMI. It also requires that each UMI is at least 0.02x times as abundant
 # as the most abundant, and is present in at least 50 reads.
 #
 # This script differs from the specific RT script in that it does not detect correctly spliced transcripts.
 # It also doesn't have a lower limit on the number of reads containing each UMI (though 
-# each must still be at least 0.01x the abundance of the most abundant).
+# each must still be at least 0.02x the abundance of the most abundant).
 #
 # Note that although the forward reads in the fastq files for these samples correspond to the forward
 # strand of the RNA, and thus the MINUS strand of the genome, the bam file format automatically reverse
@@ -38,7 +38,7 @@ get_sample <- function(string){
     return(str_split(string,":")[[1]][2])
 }
 
-find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100){
+find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 50){
     # df should have two columns - "strings" which are the UMIs, and "n" which
     # is the copy number of each
     #
@@ -103,7 +103,7 @@ find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100){
         }
     }
 
-    if(nrow(df_added) > 0){
+    if(nrow(df_added) > 1){
         return(df_added %>% select(-distances))
     } else {
         return(df_added)
@@ -112,16 +112,20 @@ find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100){
 
 ##### RUN
 
-setwd("C:/Users/ogw/Google Drive/UCL PhD/Year 2/unc13a/analyse_targeted_RNASEQ/tg3/")
+#setwd("C:/Users/ogw/Google Drive/UCL PhD/Year 2/unc13a/analyse_targeted_RNASEQ/tg3/")
 
-sample_names = read_csv("sample_names.csv")  # which barcode was used for each sample
+dir <- "//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/tg3/all_reads_used/"
 
-samples = data.frame(n = 1:14) %>% mutate(sample_name = paste0("A:/home/users/wilkino/Unc13a/tg3/ultraplex_demux_tg3_s",
+setwd(dir)
+
+sample_names = read_csv("C:/Users/ogw/Google Drive/UCL PhD/Year 2/unc13a/analyse_targeted_RNASEQ/tg3/sample_names.csv")  # which barcode was used for each sample
+
+samples = data.frame(n = 1:14) %>% mutate(sample_name = paste0(dir, "ultraplex_demux_tg3_s",
                                                                n, ".fastq.gzAligned.sortedByCoord.out.bam"))
 
 for(sample in samples$n){
     
-    bam_name = paste0("A:/home/users/wilkino/Unc13a/tg3/ultraplex_demux_tg3_s",
+    bam_name = paste0(dir, "ultraplex_demux_tg3_s",
                       sample, ".fastq.gzAligned.sortedByCoord.out.bam")
 
     message(sample)
