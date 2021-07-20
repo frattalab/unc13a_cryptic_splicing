@@ -129,8 +129,16 @@ for(sample in samples$n){
                       sample, ".fastq.gzAligned.sortedByCoord.out.bam")
 
     message(sample)
-
-    bam_df <- data.frame(scanBam(bam_name))
+    
+    # get the WASP tag from each
+    p4 <- ScanBamParam(tag=c("vW"), what="flag")
+    bam_tag <- data.frame(scanBam(bam_name, param=p4)) %>%
+        mutate(n = 1:n())
+    
+    bam_df <- data.frame(scanBam(bam_name)) %>%
+        mutate(n = 1:n()) %>%
+        inner_join(bam_tag, by ="n") %>%
+        filter(vW == 1) # filter for reads which pass WASP filtering
 
     df2 <- bam_df %>%
         mutate(umi = str_sub(qname, str_length(qname)-7, str_length(qname))) %>%
