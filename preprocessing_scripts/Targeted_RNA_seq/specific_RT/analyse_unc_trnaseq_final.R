@@ -131,8 +131,8 @@ for(sample in samples$sample){
     
     bam_df <- data.frame(scanBam(bam_name)) %>%
         mutate(n = 1:n()) %>%
-        inner_join(bam_tag, by ="n") #%>%
-        #filter(vW == 1) # filter for reads which pass WASP filtering
+        inner_join(bam_tag, by ="n") %>%
+        filter(vW == 1) # filter for reads which pass WASP filtering
 
     df2 <- bam_df %>%
         mutate(umi = str_sub(qname, str_length(qname)-7, str_length(qname))) %>%
@@ -234,4 +234,4 @@ just_C_or_G <- just_C_or_G_tmp %>%
 
 # Write final data out
 
-write_csv(just_C_or_G, "//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/Targeted_RNAseq/demultiplexed_unc/for_plot_without_vcf.csv")
+write_csv(just_C_or_G, "//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/Targeted_RNAseq/demultiplexed_unc/for_plot_vcf.csv")
