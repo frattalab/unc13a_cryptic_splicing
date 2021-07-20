@@ -23,7 +23,7 @@ library(stringdist)
 # list of "true" UMIs. It does this by finding the minimum string distance of each UMI to 
 # the UMIs currently in the list of "true" UMIs. It requires that for a UMI sequence which 
 # has a string distance of n bases, it is at least 1/(10^n) times the abundance of 
-# the most similar UMI. It also requires that each UMI is at least 0.01x times as abundant
+# the most similar UMI. It also requires that each UMI is at least 0.02x times as abundant
 # as the most abundant, and is present in at least 50 reads.
 #
 # This script differs from the random hexamer script in that it detects whether reads are cryptic
@@ -34,7 +34,7 @@ get_sample <- function(string){
     return(str_split(string,":")[[1]][2])
 }
 
-find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100,
+find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 50,
                              min_n = 50){
     # df should have two columns - "strings" which are the UMIs, and "n" which
     # is the copy number of each
@@ -104,22 +104,35 @@ find_unique_umis <- function(df, distance_multiplier = 20, break_ratio = 100,
 ##### RUN
 
 # a csv containing the names of the samples
+# samples <- read_csv("//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/Targeted_RNAseq/barcodes2.csv",
+#                    col_names = "sample_with_barcode")
+
 samples <- read_csv("//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/Targeted_RNAseq/barcodes2.csv",
                    col_names = "sample_with_barcode")
 
 # the directory containing the bam files
-dir <- "C:/Users/ogw/Downloads/bams/ultraplex_demux_"
+#dir <- "C:/Users/ogw/Downloads/bams/ultraplex_demux_"
+dir <- "//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/Targeted_RNAseq/demultiplexed_unc/ultraplex_demux_"
 
 samples$sample <- unlist(lapply(samples$sample_with_barcode, get_sample))
+
 
 for(sample in samples$sample){
 
     message(sample)
 
     bam_name <- paste0(dir,
-                        sample, ".fastq.gzAligned.out.sam.bam")
+                        sample, ".fastq.gzAligned.sortedByCoord.out.bam")
 
-    bam_df <- data.frame(scanBam(bam_name))
+    # get the WASP tag from each
+    p4 <- ScanBamParam(tag=c("vW"), what="flag")
+    bam_tag <- data.frame(scanBam(bam_name, param=p4)) %>%
+        mutate(n = 1:n())
+    
+    bam_df <- data.frame(scanBam(bam_name)) %>%
+        mutate(n = 1:n()) %>%
+        inner_join(bam_tag, by ="n") #%>%
+        #filter(vW == 1) # filter for reads which pass WASP filtering
 
     df2 <- bam_df %>%
         mutate(umi = str_sub(qname, str_length(qname)-7, str_length(qname))) %>%
@@ -221,4 +234,4 @@ just_C_or_G <- just_C_or_G_tmp %>%
 
 # Write final data out
 
-write_csv(just_C_or_G, "for_plot.csv")
+write_csv(just_C_or_G, "//data.thecrick.org/lab-ulej/home/users/wilkino/Unc13a/Targeted_RNAseq/demultiplexed_unc/for_plot_without_vcf.csv")
