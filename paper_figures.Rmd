@@ -804,9 +804,9 @@ clean_data_table %>%
   xlab("N individuals")
 ```
 
-## Systematic differences in  (read length) between cases and controls
+## Read length affects detection probability in cases
 
-```{r sequences and case/controls}
+```{r readlength_detection_in_cases}
 # library size 
 #llumina HiSeq 2500 (125 bp paired end) or an Illumina NovaSeq (100 bp paired end). 
 case_control_sequencing <- clean_data_table %>%
@@ -828,7 +828,7 @@ quick_chiq = function(tbl){
     print(comparison_table)
 
     p_value = chisq.test(comparison_table) %>%  broom::tidy() %>% pull(p.value)
-    browser()
+
     print(p_value)
     
     return(p_value)
@@ -999,13 +999,9 @@ lib_comps = c("Cervical_Spinal_Cord", "Frontal_Cortex",
 
 plot_list = list()
 for(t in 1:length(lib_comps)){
-    if(grepl("Cord",lib_comps[t]) | lib_comps[t] == "Motor_Cortex"){
-        groups = c("Control","ALS-TDP","ALS \n non-TDP")
-    }else if(lib_comps[t] %in% c("Frontal_Cortex","Temporal_Cortex")){
-        groups = c("Control","FTLD-TDP","FTLD \n non-TDP")
-    }else{
+
         groups = c("ALS-TDP", "Control", "ALS \n non-TDP", "FTLD-TDP", "FTLD \n non-TDP")
-    }
+    
     
     plt = clean_data_table %>%
         filter(tissue_clean == lib_comps[t]) %>% 
@@ -1023,7 +1019,7 @@ for(t in 1:length(lib_comps)){
                                    comparisons = list(
                                        c("Control","ALS-TDP"),
                                        c("ALS \n non-TDP","ALS-TDP"))) +
-        ggpubr::stat_compare_means(label = "p.signif", 
+        ggpubr::stat_compare_means( label = "p.signif",
                                    label.x.npc = "center", 
                                    method = "wilcox",
                                    comparisons = list(
@@ -1034,7 +1030,9 @@ for(t in 1:length(lib_comps)){
         ggpubr::theme_pubr() + 
         theme(axis.ticks.x = element_blank(),
               axis.text.x = element_blank(),
-              legend.position = "none") 
+              legend.position = "none") +
+      scale_color_manual(values = force_colors) + 
+      scale_fill_manual(values = force_colors)
     
     plot_list[[t]] <- plt
 }
@@ -1081,13 +1079,9 @@ cell_types = fread(paste0(here::here(),"/data/All_1917_samples_Darmanis_dtangle_
 for(t in 1:length(lib_comps)){
     
     
-    if(grepl("Cord",lib_comps[t]) | lib_comps[t] == "Motor_Cortex"){
-        groups = c("Control","ALS-TDP","ALS \n non-TDP")
-    }else if(lib_comps[t] %in% c("Frontal_Cortex","Temporal_Cortex")){
-        groups = c("Control","FTLD-TDP","FTLD \n non-TDP")
-    }else{
+
         groups = c("ALS-TDP", "Control", "ALS \n non-TDP", "FTLD-TDP", "FTLD \n non-TDP")
-    }
+    
 
     plt = cell_types %>% 
         left_join(clean_data_table[,.(sample,
@@ -1158,7 +1152,7 @@ cell_types %>%
   ggplot(aes(x = cell, y = deconv, fill = unc13a_detected)) + 
   geom_point(size = 2,show.legend = F,pch = 21, position = position_jitterdodge(dodge.width=1,jitter.width = 0.3))+
   geom_boxplot(outlier.color = NA) + 
-  facet_wrap(~plot_name+tissue,scales = 'free') +
+  facet_wrap(~plot_name+tissue_clean,scales = 'free') +
   ggpubr::stat_compare_means(label = "p.signif") +
   ggpubr::stat_compare_means(label = "p.format",vjust = 1.2) +
   labs(title = "Cell type decomposition and UNC13A CE detection ",subtitle = "Wilcox test") + 
@@ -1257,6 +1251,13 @@ boxplot_table %>%
 This only plots the short novel acceptor and novel donor
 
 ```{r onlyshort}
+
+star_maker = function (p.value) 
+{
+    unclass(symnum(p.value, corr = FALSE, na = FALSE, cutpoints = c(0, 0.0001,
+        0.001, 0.01, 0.05, 0.1, 1), symbols = c("****","***", "**", 
+        "*", ".", " ")))
+}
 only_short_plotter = boxplot_table %>%
     filter(tissue_clean %in%
                c("Frontal Cortex",
@@ -1276,9 +1277,20 @@ only_short_plotter = boxplot_table %>%
                                       "Temporal Cortex",
                                       "Motor Cortex"))
 
-comps = only_short_plotter %>% pull(detection_name) %>%
-  unique() %>%
-  combn(.,2,simplify = F)
+
+
+only_short_plotter %>% 
+  dplyr::select(sample,tissue_clean,inclusion_reads,disease_group2) %>% 
+  mutate(disease_group2 = gsub("\n", "",disease_group2)) %>% 
+  unique() %>% 
+  group_by(tissue_clean) %>% 
+  nest() %>%
+  mutate(wilcox_res = map(data, ~pairwise.wilcox.test(.x$inclusion_reads,.x$disease_group2) %>% broom::tidy())) %>%
+  dplyr::select(-data) %>% 
+  unnest() %>% 
+  mutate(star_plot = star_maker(p.value)) %>% fwrite("~/Desktop/stars_for_weaverly_fig3b.csv")
+  
+
 
 only_short_plotter %>% 
     ggplot(aes(x = detection_name,
@@ -1294,7 +1306,8 @@ only_short_plotter %>%
     theme_bw() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
     theme(text = element_text(size = 18))  +
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") + 
+    stat_compare_means(comparisons = comps)
 ```
 
 
@@ -1695,7 +1708,8 @@ clean_data_table %>%
   theme(text = element_text(size = 24))  +
   xlab("") +
   ylab("CE PSI")  +
-  theme(legend.position = 'none')
+  theme(legend.position = 'none') + 
+  stat_compare_means(label = 'p.signif')
 
 ```
 
@@ -3099,28 +3113,67 @@ detected_table_for_graph_rap1 = clean_data_table %>%
   mutate(n_sample = length(unique(sample))) %>%
   ungroup() %>%
   mutate(detection_name = glue::glue("{rs12973192} \n ( {n_sample} )")) %>%
-  mutate(no_cong = ifelse(rs12608932 == "C/C" & rs12973192 == "C/G",8,3)) %>% as.data.table()
+ as.data.table()
 
 #get out that person who is discongruous
 
 comparisons = combn(unique(detected_table_for_graph_rap1$detection_name),2,simplify = F)
 
-detected_table_for_graph_rap1 %>%
+rap1_fold_plot = detected_table_for_graph_rap1 %>%
   ggplot(aes(y = log2_rap1gap, x = detection_name,fill = detection_name)) +
   geom_boxplot(show.legend = F) +
   geom_jitter(show.legend = F, alpha = 0.8, height = 0,pch = 21) +
-  stat_compare_means() +
   stat_compare_means(aes(group = detection_name),comparisons = comparisons,label = "p.signif") +
-  ylab("Ratio RAP1GAP CE PSI / STMN2 CE PSI") +
-  ylab(expression(paste("Lo", g[2], " fold UNC13A CE PSI / STMN2 CE PSI "))) +
+  ylab(expression(paste("Lo", g[2], " fold CE PSI / STMN2 CE PSI "))) +
   xlab("UNC13A rs12973192 Genotype") +
   scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
   ggpubr::theme_pubr() +
   theme(text = element_text(size = 24)) +
-  geom_hline(yintercept = 0,size = 1.5)
+  geom_hline(yintercept = 0,size = 1.5) + 
+  ggtitle("RAP1GAP")
 
 ```
 
+```{r reproduce_4a_in_pfkp}
+detected_table_for_graph_pfkp = clean_data_table %>%
+  filter(!(rs12973192 == "C/G" & rs12608932 == "C/C")) %>%
+  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>%
+  filter(pfkp_cryptic_psi > 0) %>%
+  filter(stmn_2_cryptic_psi_leaf > 0 ) %>%
+  filter(junction_reads_stmn2 >= 30) %>%
+    filter((PFKP_novelacceptor + PFKP_noveldonor + PFKP_annotated) >=30) %>% 
+  filter(grepl("Cortex",tissue_clean)) %>%
+  filter(disease_tissue == T) %>%
+  filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>%
+  dplyr::select(sample,tissue_clean,disease_group2,rs12973192,rs12608932,stmn_2_cryptic_psi_leaf,pfkp_cryptic_psi) %>%
+  mutate(log2_pfkp = log2((pfkp_cryptic_psi)/(stmn_2_cryptic_psi_leaf))) %>%
+  mutate(tissue_clean = gsub("_","\n",tissue_clean)) %>%
+  group_by(rs12973192) %>%
+  mutate(n_sample = length(unique(sample))) %>%
+  ungroup() %>%
+  mutate(detection_name = glue::glue("{rs12973192} \n ( {n_sample} )")) %>%
+  mutate(no_cong = ifelse(rs12608932 == "C/C" & rs12973192 == "C/G",8,3)) %>% as.data.table()
+
+#get out that person who is discongruous
+
+comparisons = combn(unique(detected_table_for_graph_pfkp$detection_name),2,simplify = F)
+
+pfkp_fold_plot = detected_table_for_graph_pfkp %>%
+  ggplot(aes(y = log2_pfkp, x = detection_name,fill = detection_name)) +
+  geom_boxplot(show.legend = F) +
+  geom_jitter(show.legend = F, alpha = 0.8, height = 0,pch = 21) +
+  stat_compare_means(aes(group = detection_name),comparisons = comparisons,label = "p.signif") +
+  xlab("UNC13A rs12973192 Genotype") +
+  scale_fill_manual(values = c("#88CCEE","#44AA99","#1B7739")) +
+  ggpubr::theme_pubr() +
+  theme(text = element_text(size = 24)) +
+  geom_hline(yintercept = 0,size = 1.5) + 
+  ggtitle("PFKP") + 
+  ylab(element_blank())
+
+cowplot::plot_grid(rap1_fold_plot,pfkp_fold_plot)
+
+```
 
 
 
