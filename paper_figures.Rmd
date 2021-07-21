@@ -2919,7 +2919,7 @@ for(type in c("exon", "intron")){
 
 # Isothermal Titration Calorimetry
 
-Read in values
+Read in values, plot and perform a t-test
 
 ```{r warning=FALSE, message=FALSE}
 df <- read_csv(paste0(here(),
@@ -3154,7 +3154,6 @@ detected_table_for_graph_pfkp = clean_data_table %>%
   mutate(detection_name = glue::glue("{rs12973192} \n ( {n_sample} )")) %>%
   mutate(no_cong = ifelse(rs12608932 == "C/C" & rs12973192 == "C/G",8,3)) %>% as.data.table()
 
-#get out that person who is discongruous
 
 comparisons = combn(unique(detected_table_for_graph_pfkp$detection_name),2,simplify = F)
 
@@ -3172,8 +3171,102 @@ pfkp_fold_plot = detected_table_for_graph_pfkp %>%
   ylab(element_blank())
 
 cowplot::plot_grid(rap1_fold_plot,pfkp_fold_plot)
+```
+# Nanopore
+
+Read in pre-processed data (see separate script) and plot
+```{r warning=FALSE, message=FALSE}
+df <- read_csv(paste0(here(),
+                      "/data/nanopore/combined_nanopore_dataframe.csv")) 
+
+df[is.na(df)] <- 0
+
+p2_patient <- ggplot(df %>% filter(classification != "Neither",
+                                   type=="Patient"), aes(x = name, y = 100*fraction, fill = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+p2_shsy <- ggplot(df %>% filter(classification != "Neither",
+                                type=="SHSY5Y"), aes(x = name, y = 100*fraction, fill = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("SH-SY5Y") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") 
+
+p2_shsy | p2_patient
+
+# without neither removed
+
+p2_patient <- ggplot(df %>% filter(classification != "",
+                                   type=="Patient"), aes(x = name, y = 100*fraction, fill = class2,
+                                                         colour = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+p2_shsy <- ggplot(df %>% filter(classification != "",
+                                type=="SHSY5Y"), aes(x = name, y = 100*fraction, fill = class2,
+                                                     colour = class2)) +
+    geom_bar(stat="identity", position="dodge") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("SH-SY5Y") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") 
+p2_shsy | p2_patient
+
+# fractional
+
+df2 <- df %>%
+    filter(classification != "Neither") %>%
+    group_by(name) %>%
+    mutate(f = n/sum(n))
+
+ggplot(df2, aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+
+
+ggplot(df2 %>%
+           filter(type == "Patient"), aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") |
+    ggplot(df2 %>%
+           filter(type != "Patient"), aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("")
+
+
+
+
+    
 
 ```
-
 
 
