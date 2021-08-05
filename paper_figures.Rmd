@@ -602,69 +602,127 @@ rel_rna_cryptic_amount %>%
     facet_wrap(~source)
 
 ```
-# NMD experiment on SH-SY5Y cells
+# NMD experiment on SH-SY5Y cells - CHX
 
 ```{r}
 
-fbp_sy <- read_csv(file.path(here::here(),"data","results_17022021_sy5y.csv"))
-fbp_sy$condition <- as.factor(fbp_sy$condition)
-fbp_sy$condition <- factor(fbp_sy$condition,levels(fbp_sy$condition)[c(2,1)])
+for_bar_plot_input <- fread(file.path(here::here(),"data","SY5Y_Tidy_4.csv"))
+for_bar_plot <- data.frame(for_bar_plot_input)
+for_bar_plot$Treatment <- factor(for_bar_plot$Treatment, levels = c("DMSO", "CHX"))
 
-stattest_sy <- fbp_sy %>%
-    group_by(gene) %>%
-    t_test(value ~ 1, mu = 1) %>%
-    add_significance() %>%
-    add_xy_position(x="gene")
-stattest_sy
+shapiro.test(filter(for_bar_plot, Treatment == "CHX" & Gene == "HNRNPL")$Value)
+shapiro.test(filter(for_bar_plot, Treatment == "CHX" & Gene == "STMN2")$Value)
+shapiro.test(filter(for_bar_plot, Treatment == "CHX" & Gene == "UNC13A")$Value)
+shapiro.test(filter(for_bar_plot, Treatment == "CHX" & Gene == "UNC13B")$Value)
 
-nmd_plot_sy <- ggbarplot(fbp_sy,
-                         x = 'gene',
-                         y = 'value',
-                         add = c("mean_se","jitter"),
-                         fill = 'condition',
-                         color = 'condition',
-                         position = position_dodge(0.8),
-                         dot.size = 10) +
-    scale_y_continuous(labels = scales::percent) +
-    ggpubr::theme_pubr() +
-    scale_fill_manual(values = c("#40B0A6","#E1BE6A")) +
-    scale_color_manual(values = c("#1C2617","#262114")) +
-    ylab("Percent of transcript after CHX treatment") +
-    xlab("") +
-    stat_pvalue_manual(stattest_sy, label="p.signif", y.position = 9)
-nmd_plot_sy
+stattest <- for_bar_plot %>%
+  group_by(Gene) %>%
+  pairwise_t_test(Value ~ Treatment, ref.group = "DMSO", alternative = "greater") %>%
+  add_significance() %>% 
+  add_xy_position(x="Treatment")
+stattest
+
+nmd_plot_chx = ggbarplot(for_bar_plot,
+                     x = 'Gene',
+                     add = c("mean_se","jitter"),
+                     y = 'Value',
+                     color = 'Treatment',
+                     position = position_dodge(0.8),
+                     dot.size = 10) +
+  scale_y_continuous() + 
+  ggpubr::theme_pubr() + stat_pvalue_manual(stattest, label="p.signif" , x = "Gene")
+plot(nmd_plot_chx)
 
 ```
 
+# NMD experiment on SH-SY5Y cells - sTDP43+sUPF1
+
 ```{r}
 
-fbp_dz <- read_csv(file.path(here::here(),"data","results_17022021_dz.csv"))
-fbp_dz$condition <- as.factor(fbp_dz$condition)
-fbp_dz$condition <- factor(fbp_dz$condition,levels(fbp_dz$condition)[c(2,1)])
+for_bar_plot_sy_input <- fread(file.path(here::here(),"data","results_upf1.csv"))
 
-stattest_dz <- fbp_dz %>%
-    group_by(gene) %>%
-    t_test(value ~ 1, mu = 1) %>%
-    add_significance() %>%
-    add_xy_position(x="gene")
-stattest_dz
+for_bar_plot_sy_df <- data.frame(for_bar_plot_sy_input)
+for_bar_plot_sy_df$Condition <- as.factor(for_bar_plot_sy_df$Condition)
 
-nmd_plot_dz <- ggbarplot(fbp_dz,
-                         x = 'gene',
-                         y = 'value',
-                         add = c("mean_se","jitter"),
-                         fill = 'condition',
-                         color = 'condition',
-                         position = position_dodge(0.8),
-                         dot.size = 10) +
-    scale_y_continuous(labels = scales::percent) +
-    ggpubr::theme_pubr() +
-    scale_fill_manual(values = c("#40B0A6","#E1BE6A")) +
-    scale_color_manual(values = c("#1C2617","#262114")) +
-    ylab("Percent of transcript after CHX treatment") +
-    xlab("") +
-    stat_pvalue_manual(stattest_dz, label="p.signif", y.position = 26)
-nmd_plot_dz
+
+#assess TDP-43 and UPF1 KD
+for_bar_plot_sz <- for_bar_plot_sy_df %>%
+  filter(Gene == "TDP43" & (Condition == "siTDP43+siCTRL" | Condition == "siTDP43+siUPF1" | Condition == "Non-treated"))
+
+shapiro.test(filter(for_bar_plot_sz, Condition == "siTDP43+siCTRL" & Gene == "TDP43")$Value)
+shapiro.test(filter(for_bar_plot_sz, Condition == "siTDP43+siUPF1" & Gene == "TDP43")$Value)
+
+stattest_sz <- for_bar_plot_sz %>%
+  pairwise_t_test(Value ~ Condition, ref.group = "Non-treated", alternative = "less") %>%
+  add_significance() %>% 
+  add_xy_position(x="Condition")
+stattest_sz
+
+for_bar_plot_sx <- for_bar_plot_sy_df %>%
+  filter(Gene == "UPF1" & (Condition == "siTDP43+siCTRL" | Condition == "siTDP43+siUPF1"))
+
+shapiro.test(filter(for_bar_plot_sx, Condition == "siTDP43+siUPF1" & Gene == "UPF1")$Value)
+
+stattest_sx <- for_bar_plot_sx %>%
+  pairwise_t_test(Value ~ Condition, ref.group = "siTDP43+siCTRL", alternative = "less") %>%
+  add_significance() %>% 
+  add_xy_position(x="Condition")
+stattest_sx
+
+for_bar_plot_szx <- for_bar_plot_sy_df %>%
+  filter(Gene == "TDP43" & (Condition == "siTDP43+siCTRL" | Condition == "siTDP43+siUPF1" | Condition == "Non-treated")
+         | Gene == "UPF1" & (Condition == "siTDP43+siCTRL" | Condition == "siTDP43+siUPF1"))
+
+#fix position of stats for plot
+stattest_sx$xmin[1] <- 1.8
+stattest_sx$xmax[1] <- 2.2
+stattest_sx$y.position[1] <- 1.3
+stattest_sz$xmin[1] <- 0.75
+stattest_sz$xmin[2] <- 0.75
+stattest_sz$xmax[1] <- 1
+stattest_sz$xmax[2] <- 1.25
+stattest_sz$y.position[1] <- 1.2
+stattest_sz$y.position[2] <- 1.3
+
+nmd_plotz = ggbarplot(for_bar_plot_szx,
+                     x = 'Gene',
+                     add = c("mean_se","jitter"),
+                     y = 'Value',
+                     color = 'Condition',
+                     position = position_dodge(0.8),
+                     dot.size = 10) +
+  scale_y_continuous() + ylab("Percent of transcript after UPF1 knockdown") + xlab("Gene") + 
+  ggpubr::theme_pubr() + stat_pvalue_manual(stattest_sz) + stat_pvalue_manual(stattest_sx)
+plot(nmd_plotz)
+
+
+#assess rescue of NMD-sensitive transcripts after UPF1 inhibition
+for_bar_plot_sy <- for_bar_plot_sy_df %>%
+  filter(Gene == "hnRNPL" | Gene == "STMN2" | Gene == "UNC13A" | Gene == "UNC13B")
+
+shapiro.test(filter(for_bar_plot_sy, Condition == "siTDP43+siUPF1" & Gene == "hnRNPL")$Value)
+shapiro.test(filter(for_bar_plot_sy, Condition == "siTDP43+siUPF1" & Gene == "STMN2")$Value)
+shapiro.test(filter(for_bar_plot_sy, Condition == "siTDP43+siUPF1" & Gene == "UNC13A")$Value)
+shapiro.test(filter(for_bar_plot_sy, Condition == "siTDP43+siUPF1" & Gene == "UNC13B")$Value)
+
+stattest_sy <- for_bar_plot_sy %>%
+  group_by(Gene) %>%
+  pairwise_t_test(Value ~ Condition, ref.group = "siTDP43+siCTRL", alternative = "greater") %>%
+  add_significance() %>% 
+  add_xy_position(x="Condition")
+stattest_sy
+
+nmd_plot = ggbarplot(for_bar_plot_sy, 
+                     x = 'Gene', 
+                     add = c("mean_se","jitter"), 
+                     y = 'Value',
+                     color = 'Condition', 
+                     position = position_dodge(0.8), 
+                     dot.size = 10) +
+  scale_y_continuous() + 
+  ggpubr::theme_pubr() + ylab("Percent of transcript after UPF1 knockdown") + xlab("Gene") +
+  stat_pvalue_manual(stattest_sy, label="p.signif", x = "Gene")
+plot(nmd_plot)
 
 ```
 
