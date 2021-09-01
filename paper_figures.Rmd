@@ -463,11 +463,15 @@ rel_rna_cryptic_amount %>%
 ```{r}
 text_table = fread(file.path(here::here(),"data","deseq2_cellline_fold_change.csv"))
 
+
 rel_rna_cryptic_amount %>%
+  left_join(text_table[,.(plot_name,source)]) %>% 
+  unique() %>% 
+  mutate(plot_name = fct_relevel(plot_name,"iPSC MN","SH-SY5Y","I3 Neurons","SK-N-DZ_a")) %>% 
     ggbarplot(,
-              x = "source",
+              x = "plot_name",
               add = c("mean_se","jitter"),
-              y = "UNC13A",
+              y = "UNC13B",
               fill = 'condition',
               color = 'condition',
               position = position_dodge(0.8)) +
@@ -486,9 +490,9 @@ rel_rna_cryptic_amount %>%
           legend.text = element_text(size = 36,family = 'sans'),
           axis.title.y = element_text(size = 28),
           axis.text.y = element_text(size = 28)) +
-    scale_y_continuous(labels = scales::percent) +
-    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.35,label = padj_plot),size = 8) +
-    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = source, y= 1.2,label = log2FoldChange_plot),size = 8)
+    scale_y_continuous(labels = scales::percent,expand = expansion(mult = c(0, .1))) +
+    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = plot_name, y= 1.35,label = padj_plot),size = 8) +
+    geom_text(data = text_table[gene_name == "UNC13B"],aes(x = plot_name, y= 1.2,label = log2FoldChange_plot),size = 8)
 
 
 ```
@@ -1640,7 +1644,10 @@ clean_data_table %>%
     mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
     ggplot(aes(x = disease_group2,
                y = IRratioUNC13A)) +
-    geom_boxplot(aes(fill = disease_group2)) + 
+    geom_boxplot(aes(fill = disease_group2),outlier.shape = NA) + 
+   geom_jitter(aes(fill = disease_group2),
+               pch = 21,height = 0,
+               width = 0.2,size = 3,alpha = 0.8) +
     facet_wrap(~tissue_clean,scales = 'free_x') +
     stat_pvalue_manual(stat_test_a %>% filter(group1 == "Control" & group2 == "FTLD-TDP"), 
                        label = "p.signif",y.position = 0.98) +
@@ -1666,14 +1673,17 @@ clean_data_table %>%
     mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
     ggplot(aes(x = disease_group2,
                y = IRratioUNC13B)) +
-    geom_boxplot(aes(fill = disease_group2)) + 
-    facet_wrap(~tissue_clean,scales = 'free_x') +
+    geom_boxplot(aes(fill = disease_group2),outlier.shape = NA) + 
+   geom_jitter(aes(fill = disease_group2),
+               pch = 21,height = 0,
+               width = 0.2,size = 3,alpha = 0.8) +    facet_wrap(~tissue_clean,scales = 'free_x') +
     stat_pvalue_manual(stat_test_b %>% filter(group1 == "Control" & group2 == "FTLD-TDP"), 
                        label = "p.signif",y.position = 0.98) +
     stat_pvalue_manual(
         stat_test_b %>% filter(group1 == "ALS-TDP" & group2 == "Control"), 
         label = "p.signif",y.position = 0.88) +
     ylab("UNC13B IRratio") +
+  xlab(element_blank()) +
     scale_fill_manual(values = force_colors) +
     ggpubr::theme_pubr() + 
     theme(legend.position = 'none')
@@ -3358,11 +3368,73 @@ cowplot::plot_grid(rap1_fold_plot,pfkp_fold_plot)
 
 
 
+# UNC13B isoform expression in-vitro and across the NYGC
+
+```{r unc13b_isoform_cell_lines}
+iso_colors = c("#1972A9", "#28A919", "#F49F0B")
+names(iso_colors) = c("UNC13B-207","UNC13B-208","UNC13B-210")
+#207 -- 1972A9 - normal
+#208 -- 28A919 - NMD
+#210 -- F49F0B - brain
+t_type = fread(file.path(here::here(),"data","transcripts-Summary-Homo_sapiens_Gene_Summary_ENSG00000198722.csv"))
+
+cell_lines = fread(file.path(here::here(),"data","unc13b_salmon_cell_lines.csv"))
+cell_lines %>% 
+    mutate(sample = gsub(".Aligned.sorted.out","",sample)) %>% 
+    left_join(rel_rna_cryptic_amount[,.(condition,plot_name,sample)]) %>% 
+    left_join(t_type, by = c("Name" = "Transcript ID")) %>% 
+    filter(Name.y %in% c("UNC13B-207",
+                         "UNC13B-208",
+                         "UNC13B-210")) %>%
+    ggplot(aes(x =condition, y = TPM,fill = Name.y)) + 
+    geom_boxplot() +
+   geom_point(pch = 21, position = position_jitterdodge(jitter.width = 0.1,jitter.height = 0)) +
+    # facet_wrap(~plot_name) +
+  ggpubr::theme_pubr() + 
+  labs(fill="",x="") + 
+  scale_fill_manual(values = iso_colors)
+    
+```
+
+```{r unc13b_isoform_nygc}
+
+unc13b_expression = fread(file.path(here::here(),"data","unc13b_transcript_counts.csv"))
+
+clean_data_table %>% 
+    left_join(unc13b_expression) %>% 
+    mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
+    mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
+    select(sample,disease_group2,tissue_clean,unc13a_detected,TPM,Name) %>% 
+    filter(!is.na(Name)) %>% 
+    unique() %>% 
+    filter(tissue_clean %in% c("Frontal_Cortex", 
+                               "Lumbar_Spinal_Cord", 
+                               "Cervical_Spinal_Cord", 
+                               "Motor_Cortex", 
+                               "Temporal_Cortex")) %>% 
+    left_join(t_type, by = c("Name" = "Transcript ID")) %>% 
+        filter(Name.y %in% c("UNC13B-207",
+                         "UNC13B-208",
+                         "UNC13B-210")) %>%
+    mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+    ggplot(aes(x = disease_group2, y = TPM, fill = Name.y)) + 
+    geom_boxplot() +
+    geom_point(pch = 21, position = position_jitterdodge(jitter.width = 0.1,jitter.height = 0)) +
+    facet_wrap(~tissue_clean,scales = 'free') + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) + 
+    scale_y_continuous(label=comma) +
+    ggpubr::theme_pubr() + 
+    labs(fill="",x="") +
+    scale_fill_manual(values = iso_colors)
+
+
+```
+
 # Nanopore
 
 Read in pre-processed data (see separate script) and plot
 ```{r warning=FALSE, message=FALSE}
-df <- read_csv(paste0(here(),
+df <- read_csv(paste0(here::here(),
                       "/data/nanopore/combined_nanopore_dataframe.csv")) 
 
 df[is.na(df)] <- 0
