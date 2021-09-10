@@ -1,6 +1,6 @@
 ---
 title: "Figures for Paper"
-author: "Anna-Leigh Brown + Matteo Zanovello + Oscar Wilkins"
+author: "Anna-Leigh Brown + Matteo Zanovello + Oscar Wilkins + Matthew Keuss"
 date: "06/10/2020"
 output:
     html_document:
@@ -723,12 +723,20 @@ nmd_plot = ggbarplot(for_bar_plot_sy,
                      x = 'Gene', 
                      add = c("mean_se","jitter"), 
                      y = 'Value',
-                     color = 'Condition', 
+                     color = 'Condition',
+                     fill = "Condition",
                      position = position_dodge(0.8), 
-                     dot.size = 10) +
+                     dot.size = 20,
+                     size = 1.5) +
   scale_y_continuous() + 
   ggpubr::theme_pubr() + ylab("Percent of transcript after UPF1 knockdown") + xlab("Gene") +
-  stat_pvalue_manual(stattest_sy, label="p.signif", x = "Gene")
+  stat_pvalue_manual(stattest_sy, label="p.signif", x = "Gene") +
+    theme(axis.ticks.length=unit(0.1,"inch"),
+        axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))+
+  scale_fill_manual(values = c("#fca361ff","#aac043ff")) +
+  scale_color_manual(values = c("#000000ff","#000000ff"))
+
 plot(nmd_plot)
 
 ```
@@ -1605,6 +1613,83 @@ dis_tis = clean_data_table[disease_tissue == T,unique(tissue_clean)]
 dis_tis = c("Cerebellum",dis_tis)
 my_plots = purrr::map(dis_tis,plot_by_tissue, clean_data_table)
 ggarrange(plotlist=my_plots)
+
+```
+
+## UNC13B fsE across NYGC cohort 
+
+```{r do_stats}
+
+for_stats = clean_data_table %>% 
+    filter(tissue_clean %in%
+               c("Frontal_Cortex",
+                 "Lumbar_Spinal_Cord",
+                 "Cervical_Spinal_Cord",
+                 "Motor_Cortex",
+                 "Temporal_Cortex",
+                 "Cerebellum") )%>%
+    group_by(disease_group2,tissue_clean) %>%
+    mutate(n_sample = n_distinct(sample)) %>%
+    ungroup() %>%
+    mutate(disease_group2 = gsub("Control", " Control",disease_group2)) %>%
+    mutate(detection_name = glue::glue("{disease_group2} \n ( {n_sample} )"))  %>%
+    mutate(tissue_clean = fct_relevel(tissue_clean, "Motor_Cortex",
+                                      "Frontal_Cortex",
+                                      "Temporal_Cortex",
+                                      "Cervical_Spinal_Cord",
+                                      "Lumbar_Spinal_Cord")) %>% 
+  mutate(all_the_fse_reads =  (((UNC13B_nmd_junction_5prime + UNC13B_nmd_junction_3prime)/ library_size) * 10^6)) %>% 
+  dplyr::select(tissue_clean,all_the_fse_reads,disease_group2) %>% 
+  group_by(tissue_clean) %>% 
+  nest()
+  
+
+stars_table = for_stats %>% 
+  mutate(wilcox_test = map(data, ~{pairwise.wilcox.test(.x$all_the_fse_reads,.x$disease_group2) %>% broom::tidy()})) %>% 
+  dplyr::select(-data) %>% 
+  unnest() %>% 
+  ungroup() %>% 
+  mutate(stars = gtools::stars.pval(p.value = p.value)) %>% 
+  filter(p.value < 0.05) %>% 
+  mutate(y.position = seq(from = 1.5,to = 2.6,length.out = 11))
+
+```
+
+```{r plot_unc13b_fsE_nygc}
+clean_data_table %>% 
+    filter(tissue_clean %in%
+               c("Frontal_Cortex",
+                 "Lumbar_Spinal_Cord",
+                 "Cervical_Spinal_Cord",
+                 "Motor_Cortex",
+                 "Temporal_Cortex",
+                 "Cerebellum") )%>%
+    group_by(disease_group2,tissue_clean) %>%
+    mutate(n_sample = n_distinct(sample)) %>%
+    ungroup() %>%
+    mutate(disease_group2 = gsub("Control", " Control",disease_group2)) %>%
+    mutate(detection_name = glue::glue("{disease_group2} \n ( {n_sample} )"))  %>%
+    mutate(tissue_clean = fct_relevel(tissue_clean, "Motor_Cortex",
+                                      "Frontal_Cortex",
+                                      "Temporal_Cortex",
+                                      "Cervical_Spinal_Cord",
+                                      "Lumbar_Spinal_Cord")) %>% 
+  mutate(all_the_fse_reads =  (((UNC13B_nmd_junction_5prime + UNC13B_nmd_junction_3prime)/ library_size) * 10^6)) %>% 
+  ggplot(aes(x = disease_group2,
+               y =all_the_fse_reads,
+               fill ="red")) +
+    geom_boxplot(show.legend = F,position = position_dodge(preserve = "single",width = 1),outlier.colour = NA) +
+    geom_point(size = 2,show.legend = F,pch = 21, position = position_jitterdodge(dodge.width=1,jitter.width = 0.3))+
+    ggplot2::facet_wrap(~tissue_clean,scales = "free",nrow = 2) +
+    ylab("UNC13B fsE \n reads per million") +
+    theme(text = element_text(size = 12)) +
+    xlab("") +
+    scale_fill_manual(values = colorblind_pal()(4)[2:4]) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(text = element_text(size = 18))  +
+    theme(legend.position = "bottom") + 
+  stat_pvalue_manual(stars_table, label = "{stars}")
 
 ```
 
@@ -3386,43 +3471,48 @@ cell_lines %>%
     filter(Name.y %in% c("UNC13B-207",
                          "UNC13B-208",
                          "UNC13B-210")) %>%
-    ggplot(aes(x =condition, y = TPM,fill = Name.y)) + 
-    geom_boxplot() +
-   geom_point(pch = 21, position = position_jitterdodge(jitter.width = 0.1,jitter.height = 0)) +
+    ggplot(aes(x =condition, y = TPM,fill = Name.y),color = 'black') + 
+    geom_boxplot(size = 1.2,color = "black") +
+   geom_point(stroke = 1.2,size = 2.3,pch = 21, position = position_jitterdodge(jitter.width = 0.1,jitter.height = 0)) +
     # facet_wrap(~plot_name) +
   ggpubr::theme_pubr() + 
   labs(fill="",x="") + 
-  scale_fill_manual(values = iso_colors)
+  scale_fill_manual(values = iso_colors) 
     
 ```
 
 ```{r unc13b_isoform_nygc}
 
 unc13b_expression = fread(file.path(here::here(),"data","unc13b_transcript_counts.csv"))
-
-clean_data_table %>% 
-    left_join(unc13b_expression) %>% 
-    mutate(inclusion_reads = UNC13A_3prime_leaf + UNC13A_5prime_1_leaf) %>% 
-    mutate(unc13a_detected = ifelse(inclusion_reads > 0, yes = "+", no = "-")) %>% 
-    select(sample,disease_group2,tissue_clean,unc13a_detected,TPM,Name) %>% 
-    filter(!is.na(Name)) %>% 
+unc13b_expression %>% 
+    left_join(t_type, by = c("Name" = "Transcript ID")) %>% 
+    filter(sample != "") %>% 
+    dplyr::select(sample,
+                  EffectiveLength,
+                  NumReads,
+                  Name.y) %>% 
+    unique() %>% 
+    left_join(clean_data_table[,.(sample,library_size)]) %>% 
+    filter(!is.na(library_size)) %>% 
+    mutate(TPM = (NumReads )/ (library_size / 10^6)) %>% 
+    unique() %>% 
+  left_join(clean_data_table %>% 
+    select(sample,disease_group2,tissue_clean)) %>% 
     unique() %>% 
     filter(tissue_clean %in% c("Frontal_Cortex", 
                                "Lumbar_Spinal_Cord", 
                                "Cervical_Spinal_Cord", 
                                "Motor_Cortex", 
                                "Temporal_Cortex")) %>% 
-    left_join(t_type, by = c("Name" = "Transcript ID")) %>% 
-        filter(Name.y %in% c("UNC13B-207",
+    mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
+      filter(Name.y %in% c("UNC13B-207",
                          "UNC13B-208",
                          "UNC13B-210")) %>%
-    mutate(disease_group2 = fct_relevel(disease_group2, "Control")) %>% 
     ggplot(aes(x = disease_group2, y = TPM, fill = Name.y)) + 
     geom_boxplot() +
     geom_point(pch = 21, position = position_jitterdodge(jitter.width = 0.1,jitter.height = 0)) +
     facet_wrap(~tissue_clean,scales = 'free') + 
     theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) + 
-    scale_y_continuous(label=comma) +
     ggpubr::theme_pubr() + 
     labs(fill="",x="") +
     scale_fill_manual(values = iso_colors)
@@ -3527,7 +3617,144 @@ ggplot(df2 %>%
 
 
     
+# fractional
+    
+    
+df %>%
+    filter(classification != "Neither") %>%
+    group_by(name) %>%
+    mutate(f = n/sum(n)) %>% 
+  filter(grepl("FTD",name)) %>% 
+  ggplot(aes(x = name, y = 100*f, fill = classification)) +
+    geom_bar(stat="identity") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") +
+  scale_fill_manual(values = c("#006613ff",
+                               "#ffbf00ff",
+                               "#f5671cff")) +
+    theme(axis.ticks.length=unit(0.1,"inch"),
+        axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))
+
+
+ggplot(df %>% filter(type=="Patient"), 
+       aes(x = name, y = 100*fraction, fill = class2)) +
+    geom_bar(stat="identity", position="dodge",color = "black") +
+    ggpubr::theme_pubr() +
+    ggeasy::easy_rotate_x_labels(side = "right") +
+    ylab("Percentage of reads") +
+    ggtitle("Patient RNA") +
+    xlab("") +
+    ggeasy::easy_add_legend_title("") +
+    scale_fill_manual(values = c("#006613ff",
+                               "#ffbf00ff",
+                               "#f5671cff",
+                               "#290340ff")) +
+    theme(axis.ticks.length=unit(0.1,"inch"),
+        axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))
 
 ```
 
+
+# Different guides strength
+
+```{r}
+guide_strength = fread(file.path(here::here(),"data","different_guides_cryptic_expression.csv"))
+guide_strength %>% 
+  melt() %>% 
+  filter(`cell line` == "i5W") %>% 
+   mutate(condition = fct_relevel(condition,
+                              "control","tdp43_mild")) %>%
+    ggbarplot(,
+              x = "condition",
+              add = c("mean_se","jitter"),
+              y = "value",
+              fill = 'variable',
+              color = 'variable',
+              position = position_dodge(0.8)) +
+    ggpubr::theme_pubr() +
+      scale_color_manual(
+        values = c("#1C2617","#262114","#262114")
+    ) +
+        scale_fill_manual(
+        values = c("#1576b8","#eb7f3f","#975452")
+    ) +
+    scale_y_continuous(labels = scales::percent) +
+  ggtitle("NCRM5")
+
+guide_strength %>% 
+  melt() %>% 
+  filter(`cell line` == "i11w_repeat") %>% 
+   mutate(condition = fct_relevel(condition,
+                              "control","tdp43_mild")) %>%
+    ggbarplot(,
+              x = "condition",
+              add = c("mean_se","jitter"),
+              y = "value",
+              fill = 'variable',
+              color = 'variable',
+              position = position_dodge(0.8)) +
+    ggpubr::theme_pubr() +
+      scale_color_manual(
+        values = c("#1C2617","#262114","#262114")
+    ) +
+        scale_fill_manual(
+        values = c("#1576b8","#eb7f3f","#975452")
+    ) +
+    scale_y_continuous(labels = scales::percent) +
+  ggtitle("WTC11")
+```
+
+# Dox curves and protein/RNA levels
+
+```{r}
+library(tidyverse)
+library(viridis)
+library(dplyr)
+
+
+
+Protein <- read.csv(file.path(here::here(),"data","Protein_RNA_Corr_3.csv"), colClasses = c("factor","factor","numeric","factor","factor"))
+
+Protein$Treatment <- factor(Protein$Treatment, levels=c("NT","Dox-1","Dox-2","Dox-3","Dox-4","Dox-5"))
+Protein$Line_Group <- factor(Protein$Line_Group, levels=c("Protein","RNA","Correct_RNA"))
+
+
+agg=aggregate(Value~Treatment*Gene*Line_Group*Color_Group, data=Protein, FUN="mean")
+standard_error <- function(x) sd(x) / sqrt(length(x))
+agg$se=aggregate(Value~Treatment*Gene*Line_Group*Color_Group, data=Protein, FUN="standard_error")$Value
+
+
+limits <- aes(ymax=Value+se, ymin=Value-se)
+dodge <- position_dodge(width=0.9) 
+
+
+agg = agg %>% 
+  filter(Gene != "13A-RNA") %>% 
+  mutate(Line_Group = gsub("Correct_RNA","RNA",Line_Group))
+
+ggplot(agg, aes(y=Value, x=Treatment)) +
+  geom_line(size = 2,mapping = aes(x=Treatment, y=Value,
+                          linetype=Line_Group, group=Gene,color = Color_Group), size=1)+
+  geom_errorbar(limits, 
+                position=dodge, 
+                width=0.24,
+                size = 1.1)+
+  xlab("") +
+  ylab("") +
+  ggpubr::theme_pubr()+
+  scale_y_continuous(labels = scales::percent_format(scale = 1))+
+  scale_colour_viridis_d(begin=0, end=1) +
+  labs(linetype = "") +
+  theme(axis.ticks.length=unit(0.1,"inch"),
+        axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))
+
+
+
+```
 
