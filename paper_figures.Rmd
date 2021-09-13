@@ -1293,7 +1293,9 @@ boxplot_table %>%
     mutate(detection_name = glue::glue("{disease_group2} \n ( {n_sample} )")) %>%
   mutate(cortex = ifelse(grepl(" Cord",tissue_clean),"cot","cor")) %>%
   ggplot() +
-  geom_col(aes(x = detection_name, y = detection_rate,fill = detection_name),position = position_dodge2(width = 0.8, preserve = "single")) +
+  geom_col(aes(x = detection_name,
+               y = detection_rate,
+               fill = detection_name),color = 'black',position = position_dodge2(width = 0.8, preserve = "single")) +
   ggpubr::theme_pubr() +
   ylab("Percent of Tissues \n UNC13A Cryptic Detected") +
   theme(text = element_text(size = 18)) +
@@ -1303,7 +1305,7 @@ boxplot_table %>%
   theme(axis.text.x =  element_text(size = 14)) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   theme(text = element_text(size = 18))  +
-  scale_fill_manual(values = c("#4C97B5","#4C97B5","#4C97B5","#4C97B5","#4C97B5","red","#C87156","#C87156")) +
+  scale_fill_manual(values = c("#00bd7dff","#00bd7dff","#00bd7dff","#00bd7dff","#00bd7dff","red","#e668f3ff","#e668f3ff")) +
   theme(legend.position = "none")
 ```
 
@@ -3011,8 +3013,8 @@ peak_df <- filtered_df %>%
   pivot_wider(names_from = "condition", values_from = c("peak_mean", "peak_sd")) %>%
   mutate(frac_increase = (peak_mean_R-peak_mean_H)/peak_mean_H) %>%
   mutate(peak_rank = rank(frac_increase)) %>%
-  mutate(colour = ifelse(abs(pos-exon_snp)<region_length, "gold",
-                         ifelse(abs(pos-intron_snp)<region_length, "purple", "grey50")))
+  mutate(colour = ifelse(abs(pos-exon_snp)<region_length, "#f7e7abff",
+                         ifelse(abs(pos-intron_snp)<region_length, "#c8e1c4ff", "grey50")))
 
 peak_df$upper_bound <- mapply(find_ratio_bound,
                         peak_df$peak_mean_R,
@@ -3029,14 +3031,14 @@ peak_df$lower_bound <- mapply(find_ratio_bound,
                         0.5*(1-confidence_interval))
 
 ggplot(peak_df, aes(x = peak_rank, y = 100*frac_increase, fill=colour)) +
-  geom_bar(stat="identity") +
+  geom_bar(stat="identity",,color = 'black') +
   scale_fill_identity() +
   theme_minimal() +
   ggpubr::theme_pubr()+
   ylab("% change in 2x Risk") +
   xlab("Rank") +
   geom_errorbar(aes(ymin = 100*lower_bound, ymax = 100*upper_bound, x = peak_rank),
-                width = 0.3)
+                width = 0.3,size = 1.1)
 
 
 ```
@@ -3664,6 +3666,7 @@ ggplot(df %>% filter(type=="Patient"),
 
 ```{r}
 guide_strength = fread(file.path(here::here(),"data","different_guides_cryptic_expression.csv"))
+
 guide_strength %>% 
   melt() %>% 
   filter(`cell line` == "i5W") %>% 
@@ -3684,7 +3687,9 @@ guide_strength %>%
         values = c("#1576b8","#eb7f3f","#975452")
     ) +
     scale_y_continuous(labels = scales::percent) +
-  ggtitle("NCRM5")
+  ggtitle("NCRM5") +
+         theme(axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))
 
 guide_strength %>% 
   melt() %>% 
@@ -3706,7 +3711,9 @@ guide_strength %>%
         values = c("#1576b8","#eb7f3f","#975452")
     ) +
     scale_y_continuous(labels = scales::percent) +
-  ggtitle("WTC11")
+  ggtitle("WTC11") +
+          axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))
 ```
 
 # Dox curves and protein/RNA levels
