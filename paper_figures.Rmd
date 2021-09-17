@@ -1411,8 +1411,7 @@ only_short_plotter %>%
     theme_bw() +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
     theme(text = element_text(size = 18))  +
-    theme(legend.position = "bottom") + 
-    stat_compare_means(comparisons = comps)
+    theme(legend.position = "bottom") 
 ```
 
 
@@ -2456,19 +2455,6 @@ k = pretty_effect_plot(m1,p_value_cutoff = 0.05)
 print(k)
 
 ```
-## Detection by genotype
-```{r}
-
-clean_data_table %>%
-  filter(!(rs12973192 == "C/G" & rs12608932 == "C/C")) %>%
-  mutate(snp_status = case_when(rs12973192 == "C/C" ~ "healthy/healthy",
-                                rs12973192 == "C/G" ~ "healthy/risk",
-                                rs12973192 == "G/G" ~ "risk/risk")) %>% 
-  filter(disease_tissue == T) %>%
-  filter(junction_reads_stmn2 >= 30) %>%
-  filter(junction_reads_unc13a >= 30) %>%
-
-```
 
 ## Log2 Fold UNC / STMN2 CE in TDP-path with both detected - rs12608932
 
@@ -2513,8 +2499,8 @@ detected_table_for_graph_rs12608932 %>%
 ## Log2 Fold UNC / STMN2 CE in TDP-path with both detected - STR - cortex and cord
 
 ```{r str and log2 graph}
-str_genotype = janitor::clean_names(fread("/Users/annaleigh/Documents/GitHub/unc13a_cryptic_splicing/data/rs56041637.genotypes.377samples.txt")) %>% 
-  dplyr::rename(presumed_unique_id = number_sample_id)
+str_genotype = janitor::clean_names(fread(file.path(here::here(),"data/rs56041637.genotypes.377samples.txt"))) %>% 
+  dplyr::rename(participant_id = number_sample_id)
 
 detected_table_for_graph = clean_data_table %>%
   filter(disease_group2 %in% c("FTLD-TDP","ALS-TDP")) %>%
@@ -3240,11 +3226,11 @@ als_ftd_genomics = c("ALS2", "ANG", "APP", "AR", "ATN1", "ATXN1", "ATXN10", "ATX
 ipsc_de = as.data.table(ipsc_de)
 ipsc_splicing = as.data.table(ipsc_splicing)
 
-ipsc_de[gene_name %in% als_ftd_genomics][order(log2FoldChange)][,.(log2FoldChange,padj,gene_name,gene_expresion)] %>% mutate(has_cryptic = gene_name %in% ipsc_splicing[cryptic_junction == T,gene_name]) %>% unique() %>% arrange(log2FoldChange) %>% clipr::write_clip()
+ipsc_de[gene_name %in% als_ftd_genomics][order(log2FoldChange)][,.(log2FoldChange,padj,gene_name,gene_expresion)] %>% mutate(has_cryptic = gene_name %in% ipsc_splicing[cryptic_junction == T,gene_name]) %>% unique() %>% arrange(log2FoldChange) %>% knitr::kable()
 ```
 
 
-## Linear model on UNC13A CE PSI with covariates
+# Linear model on UNC13A CE PSI with covariates
 ```{r the_silly_linear}
 # library size 
 #llumina HiSeq 2500 (125 bp paired end) or an Illumina NovaSeq (100 bp paired end). 
@@ -3284,11 +3270,14 @@ full_cov %>%
     nest() %>% 
     mutate(lm_obj = map(data, ~lm(unc13a_cryptic_leaf_psi ~., data = .x))) %>% 
     mutate(broomed = map(lm_obj, broom::tidy)) %>% 
-    dplyr::select(tissue_clean,broomed) %>% unnest() %>% filter(p.value < 0.05) %>% View()
+    dplyr::select(tissue_clean,broomed) %>% 
+    unnest() %>% 
+    filter(p.value < 0.05) %>% knitr::kable()
     
 
-nested %>% 
-    pluck("lm_obj", 1) %>% broom::tidy()
+```
+
+```{r detection_seq_platform}
 unc13a_data_fisher = unc13a_sequencing_platform %>% 
     filter(tissue_clean != "Thoracic_Spinal_Cord") %>% 
     group_by(disease_group2,tissue_clean) %>% 
@@ -3718,7 +3707,7 @@ guide_strength %>%
     ) +
     scale_y_continuous(labels = scales::percent) +
   ggtitle("WTC11") +
-          axis.line = element_line(colour = 'black', size = 1.5),
+           theme(axis.line = element_line(colour = 'black', size = 1.5),
         axis.ticks = element_line(colour = "black", size = 2))
 ```
 
@@ -3738,9 +3727,11 @@ Protein$Line_Group <- factor(Protein$Line_Group, levels=c("Protein","RNA","Corre
 
 
 agg=aggregate(Value~Treatment*Gene*Line_Group*Color_Group, data=Protein, FUN="mean")
-standard_error <- function(x) sd(x) / sqrt(length(x))
-agg$se=aggregate(Value~Treatment*Gene*Line_Group*Color_Group, data=Protein, FUN="standard_error")$Value
+std <- function(x) sd(x) / sqrt(length(x))
 
+tmp = Protein %>% 
+  group_by(Treatment,Gene,Line_Group,Color_Group) %>% 
+  summarise(se = std(Value))
 
 limits <- aes(ymax=Value+se, ymin=Value-se)
 dodge <- position_dodge(width=0.9) 
@@ -3748,7 +3739,8 @@ dodge <- position_dodge(width=0.9)
 
 agg = agg %>% 
   filter(Gene != "13A-RNA") %>% 
-  mutate(Line_Group = gsub("Correct_RNA","RNA",Line_Group))
+  mutate(Line_Group = gsub("Correct_RNA","RNA",Line_Group)) %>% 
+  left_join(tmp)
 
 ggplot(agg, aes(y=Value, x=Treatment)) +
   geom_line(size = 2,mapping = aes(x=Treatment, y=Value,
