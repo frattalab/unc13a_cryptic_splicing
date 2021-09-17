@@ -3203,22 +3203,28 @@ Read in values, plot and perform a t-test
 
 ```{r warning=FALSE, message=FALSE}
 df <- read_csv(paste0(here(),
-                      "/data/itc/itc final values.csv")) %>%
-    group_by(RNA) %>%
-    mutate(sd =sd(kd)) %>%
-    mutate(mean_kd = mean(kd))
+                      "/data/itc/itc final values.csv")) 
 
-ggplot(df, aes(x = RNA, y = kd)) +
-    geom_bar(aes(x = RNA, y = mean_kd), stat="identity", position="dodge") +
-    geom_point() +
-    geom_errorbar(aes(x=RNA, ymin = mean_kd-sd, ymax = mean_kd+sd),
-                  width = 0.3) +
+df2 <- df %>%
+    group_by(RNA, experiment) %>%
+    mutate(sd2 =ifelse(is.na(sd), sd(kd), sd)) %>%
+    mutate(mean_kd = mean(kd)) %>%
+  ungroup() %>%
+  select(experiment, RNA, mean_kd, sd2) %>%
+  unique()
+
+ggplot(df2, aes(x = experiment, fill = RNA, y = mean_kd)) +
+    geom_bar(stat="identity", position="dodge") +
+    #geom_point(aes(group=RNA), position="dodge") +
+    geom_errorbar(aes(x=experiment, ymin = mean_kd-sd2, ymax = mean_kd+sd2,
+                      fill = RNA), position="dodge") +
     ylim(0, NA) +
     ggpubr::theme_pubr() +
     ylab("Kd / nM") +
     xlab("")
 
-t.test(df$kd[which(df$RNA=="H")], df$kd[which(df$RNA=="R")])
+t.test(df$kd[which(df$RNA=="H" & df$experiment=="exon")], df$kd[which(df$RNA=="R" & df$experiment=="exon")])
+t.test(df$kd[which(df$RNA=="H" & df$experiment=="intron")], df$kd[which(df$RNA=="R" & df$experiment=="intron")])  # this is an overestimate of significance - however still borderline significant (~0.05) when fitting error is taken into account
 ```
 
 
