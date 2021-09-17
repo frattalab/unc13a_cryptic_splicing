@@ -1,0 +1,139 @@
+Treatment,Gene,Value,Line_Group,Color_Group
+Dox-1,13A-Correct RNA,95,Correct_RNA,UNC13A
+Dox-1,13A-Correct RNA,92,Correct_RNA,UNC13A
+Dox-1,13A-Correct RNA,95,Correct_RNA,UNC13A
+Dox-2,13A-Correct RNA,56,Correct_RNA,UNC13A
+Dox-2,13A-Correct RNA,56,Correct_RNA,UNC13A
+Dox-2,13A-Correct RNA,54,Correct_RNA,UNC13A
+Dox-3,13A-Correct RNA,46,Correct_RNA,UNC13A
+Dox-3,13A-Correct RNA,46,Correct_RNA,UNC13A
+Dox-3,13A-Correct RNA,44,Correct_RNA,UNC13A
+Dox-4,13A-Correct RNA,31,Correct_RNA,UNC13A
+Dox-4,13A-Correct RNA,29,Correct_RNA,UNC13A
+Dox-4,13A-Correct RNA,32,Correct_RNA,UNC13A
+Dox-5,13A-Correct RNA,8,Correct_RNA,UNC13A
+Dox-5,13A-Correct RNA,16,Correct_RNA,UNC13A
+Dox-5,13A-Correct RNA,6,Correct_RNA,UNC13A
+NT,13A-Correct RNA,102,Correct_RNA,UNC13A
+NT,13A-Correct RNA,98,Correct_RNA,UNC13A
+NT,13A-Correct RNA,101,Correct_RNA,UNC13A
+Dox-1,13A-Protein,84.4,Protein,UNC13A
+Dox-1,13A-Protein,83,Protein,UNC13A
+Dox-1,13A-Protein,74.2,Protein,UNC13A
+Dox-2,13A-Protein,33.8,Protein,UNC13A
+Dox-2,13A-Protein,33.2,Protein,UNC13A
+Dox-2,13A-Protein,32.5,Protein,UNC13A
+Dox-3,13A-Protein,17.1,Protein,UNC13A
+Dox-3,13A-Protein,14.7,Protein,UNC13A
+Dox-3,13A-Protein,11.2,Protein,UNC13A
+Dox-4,13A-Protein,8.8,Protein,UNC13A
+Dox-4,13A-Protein,8,Protein,UNC13A
+Dox-4,13A-Protein,7.3,Protein,UNC13A
+Dox-5,13A-Protein,4.5,Protein,UNC13A
+Dox-5,13A-Protein,4.1,Protein,UNC13A
+Dox-5,13A-Protein,4.3,Protein,UNC13A
+NT,13A-Protein,90.7,Protein,UNC13A
+NT,13A-Protein,97.8,Protein,UNC13A
+NT,13A-Protein,111.6,Protein,UNC13A
+Dox-1,13A-RNA,97,RNA,UNC13A
+Dox-1,13A-RNA,92,RNA,UNC13A
+Dox-1,13A-RNA,96,RNA,UNC13A
+Dox-2,13A-RNA,60,RNA,UNC13A
+Dox-2,13A-RNA,60,RNA,UNC13A
+Dox-2,13A-RNA,58,RNA,UNC13A
+Dox-3,13A-RNA,51,RNA,UNC13A
+Dox-3,13A-RNA,52,RNA,UNC13A
+Dox-3,13A-RNA,48,RNA,UNC13A
+Dox-4,13A-RNA,43,RNA,UNC13A
+Dox-4,13A-RNA,42,RNA,UNC13A
+Dox-4,13A-RNA,42,RNA,UNC13A
+Dox-5,13A-RNA,27,RNA,UNC13A
+Dox-5,13A-RNA,25,RNA,UNC13A
+Dox-5,13A-RNA,24,RNA,UNC13A
+NT,13A-RNA,103,RNA,UNC13A
+NT,13A-RNA,99,RNA,UNC13A
+NT,13A-RNA,101,RNA,UNC13A
+Dox-1,13B-Protein,82.9,Protein,UNC13B
+Dox-1,13B-Protein,87.7,Protein,UNC13B
+Dox-1,13B-Protein,84.1,Protein,UNC13B
+Dox-2,13B-Protein,87,Protein,UNC13B
+Dox-2,13B-Protein,50.3,Protein,UNC13B
+Dox-2,13B-Protein,56.3,Protein,UNC13B
+Dox-3,13B-Protein,52.2,Protein,UNC13B
+Dox-3,13B-Protein,71.5,Protein,UNC13B
+Dox-3,13B-Protein,58.2,Protein,UNC13B
+Dox-4,13B-Protein,60,Protein,UNC13B
+Dox-4,13B-Protein,22.3,Protein,UNC13B
+Dox-4,13B-Protein,31.3,Protein,UNC13B
+Dox-5,13B-Protein,46.3,Protein,UNC13B
+Dox-5,13B-Protein,45.9,Protein,UNC13B
+Dox-5,13B-Protein,62,Protein,UNC13B
+NT,13B-Protein,92.5,Protein,UNC13B
+NT,13B-Protein,100,Protein,UNC13B
+NT,13B-Protein,91.5,Protein,UNC13B
+Dox-1,13B-RNA,92,RNA,UNC13B
+Dox-1,13B-RNA,108,RNA,UNC13B
+Dox-1,13B-RNA,92,RNA,UNC13B
+Dox-2,13B-RNA,83,RNA,UNC13B
+Dox-2,13B-RNA,92,RNA,UNC13B
+Dox-2,13B-RNA,69,RNA,UNC13B
+Dox-3,13B-RNA,64,RNA,UNC13B
+Dox-3,13B-RNA,62,RNA,UNC13B
+Dox-3,13B-RNA,64,RNA,UNC13B
+Dox-4,13B-RNA,66,RNA,UNC13B
+Dox-4,13B-RNA,63,RNA,UNC13B
+Dox-4,13B-RNA,64,RNA,UNC13B
+Dox-5,13B-RNA,27,RNA,UNC13B
+Dox-5,13B-RNA,23,RNA,UNC13B
+Dox-5,13B-RNA,18,RNA,UNC13B
+NT,13B-RNA,112,RNA,UNC13B
+NT,13B-RNA,94,RNA,UNC13B
+NT,13B-RNA,103,RNA,UNC13B
+Dox-1,TDP-Protein,73.8,Protein,TDP-43
+Dox-1,TDP-Protein,75.3,Protein,TDP-43
+Dox-1,TDP-Protein,78.1,Protein,TDP-43
+Dox-2,TDP-Protein,32.1,Protein,TDP-43
+Dox-2,TDP-Protein,23.3,Protein,TDP-43
+Dox-2,TDP-Protein,18.4,Protein,TDP-43
+Dox-3,TDP-Protein,9.9,Protein,TDP-43
+Dox-3,TDP-Protein,8.4,Protein,TDP-43
+Dox-3,TDP-Protein,5.6,Protein,TDP-43
+Dox-4,TDP-Protein,4.5,Protein,TDP-43
+Dox-4,TDP-Protein,4.8,Protein,TDP-43
+Dox-4,TDP-Protein,2.8,Protein,TDP-43
+Dox-5,TDP-Protein,0,Protein,TDP-43
+Dox-5,TDP-Protein,0,Protein,TDP-43
+Dox-5,TDP-Protein,0,Protein,TDP-43
+NT,TDP-Protein,90.7,Protein,TDP-43
+NT,TDP-Protein,105.3,Protein,TDP-43
+NT,TDP-Protein,99,Protein,TDP-43
+Dox-1,TDP-RNA,71,RNA,TDP-43
+Dox-1,TDP-RNA,92,RNA,TDP-43
+Dox-1,TDP-RNA,73,RNA,TDP-43
+Dox-2,TDP-RNA,44,RNA,TDP-43
+Dox-2,TDP-RNA,53,RNA,TDP-43
+Dox-2,TDP-RNA,41,RNA,TDP-43
+Dox-3,TDP-RNA,27,RNA,TDP-43
+Dox-3,TDP-RNA,27,RNA,TDP-43
+Dox-3,TDP-RNA,27,RNA,TDP-43
+Dox-4,TDP-RNA,20,RNA,TDP-43
+Dox-4,TDP-RNA,15,RNA,TDP-43
+Dox-4,TDP-RNA,18,RNA,TDP-43
+Dox-5,TDP-RNA,3,RNA,TDP-43
+Dox-5,TDP-RNA,3,RNA,TDP-43
+Dox-5,TDP-RNA,3,RNA,TDP-43
+NT,TDP-RNA,115,RNA,TDP-43
+NT,TDP-RNA,93,RNA,TDP-43
+NT,TDP-RNA,100,RNA,TDP-43
+NT,13B-Protein,100,Protein,UNC13B
+Dox-1,13B-Protein,94,Protein,UNC13B
+Dox-2,13B-Protein,85,Protein,UNC13B
+Dox-3,13B-Protein,106,Protein,UNC13B
+Dox-4,13B-Protein,77,Protein,UNC13B
+Dox-5,13B-Protein,62,Protein,UNC13B
+NT,13B-Protein,100,Protein,UNC13B
+Dox-1,13B-Protein,57,Protein,UNC13B
+Dox-2,13B-Protein,102,Protein,UNC13B
+Dox-3,13B-Protein,98,Protein,UNC13B
+Dox-4,13B-Protein,73,Protein,UNC13B
+Dox-5,13B-Protein,43,Protein,UNC13B

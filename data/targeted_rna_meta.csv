@@ -1,0 +1,15 @@
+sample name,brain bank code,disease duration,age,sex,pathology,mutations
+Control1,P64/11,,80,Female,Control,None
+Control2,P17/07,,38,Male,Control (minimal amyloid deposition),None
+Control3,P47/11,,79,Female,Control,None
+Control4,P35/07,,60,Female,AD (PCA),None
+FTD1,P56/13,,62,Female,FTD-TDP-A,C9orf72
+FTD2,P45/15,,80,Female,FTD-TDP-C,None
+FTD3,P63/05,,73,Female,FTD-TDP-C,None
+FTD4,P28/07,,74,Male,FTD-TDP-C,None
+FTD5,P40/04,,67,Female,FTD-TDP-A,C9orf72
+FTD6,P7/15,,67,Male,FTD-TDP-C,None
+FTD7,P16/09,,68,Male,FTD-TDP-A,C9orf72
+FTD8,P89/08,,65,Male,FTD-TDP-C,None
+FTD9,P13/13,,72,Male,FTD-TDP-A,TBK1
+FTD10,P11/07,,78,Male,FTD-TDP-C,None
