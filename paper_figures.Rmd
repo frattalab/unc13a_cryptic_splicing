@@ -3207,7 +3207,8 @@ ggplot(df2, aes(x = experiment, fill = RNA, y = mean_kd)) +
     ylim(0, NA) +
     ggpubr::theme_pubr() +
     ylab("Kd / nM") +
-    xlab("")
+    xlab("") +
+  scale_fill_manual(values = c("#0c9bbdff","#ffb700ff"))
 
 t.test(df$kd[which(df$RNA=="H" & df$experiment=="exon")], df$kd[which(df$RNA=="R" & df$experiment=="exon")])
 t.test(df$kd[which(df$RNA=="H" & df$experiment=="intron")], df$kd[which(df$RNA=="R" & df$experiment=="intron")])  # this is an overestimate of significance - however still borderline significant (~0.05) when fitting error is taken into account
