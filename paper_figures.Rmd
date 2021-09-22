@@ -3774,3 +3774,55 @@ ggplot(agg, aes(y=Value, x=Treatment)) +
 
 ```
 
+
+
+# Endogenous SHSY5Y iCLIP
+
+```{r}
+# Read in filtered bed file (iMAPs output, filtered by script in pre-processing scripts folder)
+sh <- read_csv(paste0(here(), "/data/iCLIP/shsy5y_tdp43_iclip_unc13a_b_only.csv"))
+
+unc13a <- sh %>%
+  filter(chr == "chr19" & start > 17599327 & ((end.x < 17690344 & end.y == 0) | 
+                                                (end.y < 17690344 & end.x == 0))) %>%
+  select(start,total) %>%
+  full_join(data.frame(start=17599327:17690344)) %>%
+  arrange(start) 
+
+unc13a[is.na(unc13a)] <- 0
+
+window <- 20
+p_a <- ggplot(unc13a, aes(x = start, y = zoo::rollmean(total, k = window, na.pad=T))) +
+  geom_line(alpha = 1) +
+  ylim(0, NA) +
+    # blue dashed line shows position of CE
+  geom_vline(xintercept = 17642430, linetype="dashed", alpha= 0.3, size=2, colour="blue") +
+    # red line shows position of retained intron
+  geom_vline(xintercept = 17628569, linetype="dashed", alpha= 0.3, size=2, colour="red") +
+  ggtitle("UNC13a") +
+  ylab(paste("Average XL density in", window, "nt window")) +
+  theme_minimal()
+
+
+unc13b <- sh %>%
+  filter(chr == "chr9" & start > 35160008 & ((end.x < 35407338 & end.y == 0) | 
+                                                (end.y < 35407338 & end.x == 0))) %>%
+  select(start,total) %>%
+  full_join(data.frame(start=35160008:35407338)) %>%
+  arrange(start)
+
+unc13b[is.na(unc13b)] <- 0
+
+p_b <- ggplot(unc13b, aes(x = start, y = zoo::rollmean(total, k = window, na.pad=T))) +
+  geom_line(alpha = 1) +
+  ylim(0, NA) +
+    # blue dashed line shows rough position of UG-repeat near fsE
+  geom_vline(xintercept = 35364641, linetype="dashed", alpha= 0.3, size=2, colour="blue") +
+  theme_minimal() +
+  ggtitle("UNC13B") +
+  ylab(paste("Average XL density in", window, "nt window"))
+
+
+p_a / p_b
+
+```
