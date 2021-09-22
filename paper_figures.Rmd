@@ -3201,19 +3201,29 @@ df2 <- df %>%
 
 ggplot(df2, aes(x = experiment, fill = RNA, y = mean_kd)) +
     geom_bar(stat="identity", position="dodge") +
-    #geom_point(aes(group=RNA), position="dodge") +
     geom_errorbar(aes(x=experiment, ymin = mean_kd-sd2, ymax = mean_kd+sd2,
                       fill = RNA), position="dodge") +
-    ylim(0, NA) +
+    ylim(0, NA)  +
+    geom_jitter(data = df, 
+                aes(group=RNA,x = experiment, y = kd,fill = RNA), 
+                position=position_jitterdodge(jitter.width = 0.1),pch = 21,size = 3,) +
     ggpubr::theme_pubr() +
     ylab("Kd / nM") +
     xlab("") +
-  scale_fill_manual(values = c("#0c9bbdff","#ffb700ff"))
+  scale_fill_manual(values = c("#0c9bbdff","#ffb700ff")) 
 
-t.test(df$kd[which(df$RNA=="H" & df$experiment=="exon")], df$kd[which(df$RNA=="R" & df$experiment=="exon")])
-t.test(df$kd[which(df$RNA=="H" & df$experiment=="intron")], df$kd[which(df$RNA=="R" & df$experiment=="intron")])  # this is an overestimate of significance - however still borderline significant (~0.05) when fitting error is taken into account
+exon_pval = t.test(df$kd[which(df$RNA=="H" & df$experiment=="exon")], df$kd[which(df$RNA=="R" & df$experiment=="exon")]) %>% broom::tidy() %>% pull(p.value)
+intron_pval = t.test(df$kd[which(df$RNA=="H" & df$experiment=="intron")], df$kd[which(df$RNA=="R" & df$experiment=="intron")])  %>% broom::tidy() %>% pull(p.value) # this is an overestimate of significance - however still borderline significant (~0.05) when fitting error is taken into account
 ```
 
+P-value two sample t-test:
+
+* RE - `r exon_pval`
+* RI - `r intron_pval`
+
+
+
+# Expression of ALS/FTD risk genes
 
 ```{r als_ftd_genes_venn}
 als_ftd_genomics = c("ALS2", "ANG", "APP", "AR", "ATN1", "ATXN1", "ATXN10", "ATXN2", 
