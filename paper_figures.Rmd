@@ -754,6 +754,38 @@ plot(nmd_plot)
 
 ```
 
+# lowdox + chx plot - from tapestation data
+
+```{r}
+
+lowdox_chx <- fread(file.path(here::here(),"data","band_plot.csv"))
+lowdox_chx <- data.frame(lowdox_chx)
+lowdox_chx$Condition <- factor(lowdox_chx$Condition, levels = c("Untreated", "Doxycycline", "DMSO", "CHX"))
+lowdox_chx$Band <- factor(lowdox_chx$Band, levels = c("Proper", "Short", "Long"))
+
+stattest <- lowdox_chx %>%
+  group_by(Band) %>%
+  pairwise_t_test(Value ~ Condition, ref.group = "CHX") %>%
+  add_significance() %>%
+  add_y_position(step.increase = 0.05) %>%
+  add_x_position()
+stattest <- filter(stattest, Band == "Proper")
+stattest
+
+
+nmd_plot_chx <- ggplot(lowdox_chx, aes(x = Condition, y = Value, color = Band, fill = Band)) + 
+  stat_summary(fun = mean, geom = "bar", aes(fill = Band), show.legend = F, position = position_dodge(width = 0.95)) + 
+  geom_point(size = 0.9, position = position_dodge(width = 0.95), color = "#000000") + 
+  stat_summary(fun.data = mean_se,  geom = "errorbar", width = 0.2, show.legend = F, position = position_dodge(width = 0.95), color = "#000000") +
+  stat_pvalue_manual(stattest) +
+  theme_classic() + theme(text = element_text(size = 24)) +
+  scale_color_manual(values = c("#1576B8","#EB7F3F","#975452", "#000000")) + 
+  scale_fill_manual(values = c("#1576B8","#EB7F3F","#975452", "#000000")) +
+  xlab("Condition") + ylab("PSI after treatment")
+plot(nmd_plot_chx)
+
+```
+
 # iPSC protein abundance mass spec
 
 ```{r}
