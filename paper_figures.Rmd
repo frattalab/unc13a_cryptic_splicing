@@ -10,7 +10,6 @@ output:
 knit: (function(inputFile, encoding) { rmarkdown::render(inputFile, encoding = encoding, output_file = file.path(dirname(inputFile), 'docs/index.html')) })
 ---
 
-WAFFLES 
 ```{css, echo = FALSE}
 h1, #TOC>ul>li {
   color: #000000;
@@ -33,6 +32,7 @@ knitr::opts_chunk$set(
 if (!require("pacman")) install.packages("pacman")
 library(pacman)
 p_load("data.table",
+       "ggnewscale",
        "tidyverse",
        "ggplot2",
        "rcompanion",
@@ -612,7 +612,9 @@ rel_rna_cryptic_amount %>%
 # NMD experiment on SH-SY5Y cells - CHX
 
 ```{r}
+std <- function(x) sd(x)/sqrt(length(x))
 
+ 
 for_bar_plot_input <- fread(file.path(here::here(),"data","SY5Y_Tidy_4.csv"))
 for_bar_plot <- data.frame(for_bar_plot_input)
 for_bar_plot$Treatment <- factor(for_bar_plot$Treatment, levels = c("DMSO", "CHX"))
@@ -629,16 +631,27 @@ stattest <- for_bar_plot %>%
   add_xy_position(x="Treatment")
 stattest
 
-nmd_plot_chx = ggbarplot(for_bar_plot,
-                     x = 'Gene',
-                     add = c("mean_se","jitter"),
-                     y = 'Value',
-                     color = 'Treatment',
-                     position = position_dodge(0.8),
-                     dot.size = 10) +
-  scale_y_continuous() + 
-  ggpubr::theme_pubr() + stat_pvalue_manual(stattest, label="p.signif" , x = "Gene")
-plot(nmd_plot_chx)
+
+sum_for_bar_plot <- for_bar_plot %>% 
+  group_by(Gene,Treatment) %>% 
+  summarize(mean = mean(Value),sem = std(Value)) 
+
+ggplot(sum_for_bar_plot) +
+  geom_col(aes(x = Gene, fill = Treatment, y = mean),position = "dodge2",color = 'black') +
+  scale_fill_manual(values = c("#F9AC66","#B4C640")) +
+  new_scale_fill() +
+  geom_errorbar(aes(x = Gene, ymin = mean - sem, ymax = mean + sem),
+                position = "dodge2",size = 1.8) +
+  geom_point(data = for_bar_plot, aes(x = Gene, fill = Treatment, y = Value),
+             pch = 21, 
+             size = 4, stroke = 1.5,
+             position = position_jitterdodge(jitter.width = 0.2)) +
+  scale_fill_manual(values = c("#000000","#000000")) +
+  ggpubr::theme_pubr() + 
+  theme(axis.ticks.length=unit(0.1,"inch"),
+        axis.line = element_line(colour = 'black', size = 1.5),
+        axis.ticks = element_line(colour = "black", size = 2))
+
 
 ```
 
@@ -3673,53 +3686,61 @@ ggplot(df %>% filter(type=="Patient"),
 
 ```{r}
 guide_strength = fread(file.path(here::here(),"data","different_guides_cryptic_expression.csv"))
+std <- function(x) sd(x)/sqrt(length(x))
 
-guide_strength %>% 
+ncrm5 <- guide_strength %>% 
   melt() %>% 
   filter(`cell line` == "i5W") %>% 
    mutate(condition = fct_relevel(condition,
-                              "control","tdp43_mild")) %>%
-    ggbarplot(,
-              x = "condition",
-              add = c("mean_se","jitter"),
-              y = "value",
-              fill = 'variable',
-              color = 'variable',
-              position = position_dodge(0.8)) +
-    ggpubr::theme_pubr() +
-      scale_color_manual(
-        values = c("#1C2617","#262114","#262114")
-    ) +
-        scale_fill_manual(
-        values = c("#1576b8","#eb7f3f","#975452")
-    ) +
-    scale_y_continuous(labels = scales::percent) +
+                              "control","tdp43_mild"))
+sum_df_ncrm5 <- ncrm5 %>% 
+  group_by(condition, variable) %>% 
+  summarize(mean = mean(value),sem = std(value))  
+
+ggplot(sum_df_ncrm5) + 
+  geom_col(aes(x = condition, fill = variable, y = mean),position = "dodge2",color = 'black',stroke = 1.5) +
+    scale_fill_manual(values = c("#1576b8","#eb7f3f","#975452")) +
+    geom_errorbar(aes(x = condition, ymin = mean - sem, ymax = mean + sem),
+                position = "dodge2",size = 1.8) +
+    new_scale_fill() +
+  geom_point(data = ncrm5, aes(x = condition, fill = variable, y = value),
+             pch = 21, 
+             size = 4, stroke = 1.5,
+             position = position_jitterdodge(jitter.width = 0.2))  +
+  scale_fill_manual(values = c("#000000","#000000","#000000")) +
+
+  ggpubr::theme_pubr() + 
+  scale_y_continuous(labels = scales::percent) +
   ggtitle("NCRM5") +
          theme(axis.line = element_line(colour = 'black', size = 1.5),
         axis.ticks = element_line(colour = "black", size = 2))
 
-guide_strength %>% 
+wtc11 <- guide_strength %>% 
   melt() %>% 
   filter(`cell line` == "i11w_repeat") %>% 
    mutate(condition = fct_relevel(condition,
-                              "control","tdp43_mild")) %>%
-    ggbarplot(,
-              x = "condition",
-              add = c("mean_se","jitter"),
-              y = "value",
-              fill = 'variable',
-              color = 'variable',
-              position = position_dodge(0.8)) +
-    ggpubr::theme_pubr() +
-      scale_color_manual(
-        values = c("#1C2617","#262114","#262114")
-    ) +
-        scale_fill_manual(
-        values = c("#1576b8","#eb7f3f","#975452")
-    ) +
-    scale_y_continuous(labels = scales::percent) +
+                              "control","tdp43_mild"))
+sum_df_wtc11 <- wtc11 %>% 
+  group_by(condition, variable) %>% 
+  summarize(mean = mean(value),sem = std(value))  
+
+
+ggplot(sum_df_wtc11) + 
+  geom_col(aes(x = condition, fill = variable, y = mean),position = "dodge2",color = 'black',stroke = 1.5) +
+    scale_fill_manual(values = c("#1576b8","#eb7f3f","#975452")) +
+    geom_errorbar(aes(x = condition, ymin = mean - sem, ymax = mean + sem),
+                position = "dodge2",size = 1.8) +
+    new_scale_fill() +
+  geom_point(data = wtc11, aes(x = condition, fill = variable, y = value),
+             pch = 21, 
+             size = 4, stroke = 1.5,
+             position = position_jitterdodge(jitter.width = 0.2))  +
+  scale_fill_manual(values = c("#000000","#000000","#000000")) +
+
+  ggpubr::theme_pubr() + 
+  scale_y_continuous(labels = scales::percent) +
   ggtitle("WTC11") +
-           theme(axis.line = element_line(colour = 'black', size = 1.5),
+         theme(axis.line = element_line(colour = 'black', size = 1.5),
         axis.ticks = element_line(colour = "black", size = 2))
 ```
 
@@ -3765,8 +3786,8 @@ ggplot(agg, aes(y=Value, x=Treatment)) +
   ylab("") +
   ggpubr::theme_pubr()+
   scale_y_continuous(labels = scales::percent_format(scale = 1))+
-  scale_colour_viridis_d(begin=0, end=1) +
   labs(linetype = "") +
+  scale_color_manual(values = c("#E1BE6A","#CD5582","#A987E8"))+
   theme(axis.ticks.length=unit(0.1,"inch"),
         axis.line = element_line(colour = 'black', size = 1.5),
         axis.ticks = element_line(colour = "black", size = 2))
